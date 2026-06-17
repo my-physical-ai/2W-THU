@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>실습 가이드 카메라 서버 (Pi5 ↔ NUC)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --color-primary: #2563EB; --color-primary-light: #DBEAFE;
+    --color-secondary: #7C3AED; --color-secondary-light: #EDE9FE;
+    --color-success: #059669; --color-success-light: #D1FAE5;
+    --color-warning: #D97706; --color-warning-light: #FEF3C7;
+    --color-danger: #DC2626; --color-danger-light: #FEE2E2;
+    --color-surface: #F8FAFC; --color-card: #FFFFFF;
+    --color-text: #1E293B; --color-muted: #64748B; --color-border: #E2E8F0;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans KR', sans-serif; color: var(--color-text);
+    background: var(--color-surface); line-height: 1.75; }
+  code, pre { font-family: 'JetBrains Mono', monospace; }
+  .container { max-width: 900px; margin: 0 auto; padding: 0 1.5rem; }
+  section { padding: 3rem 0; }
+  .section-title { font-size: 1.85rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .section-lead { color: var(--color-muted); margin-bottom: 2rem; }
+
+  .hero { background: linear-gradient(135deg, #1E3A8A, #3B82F6); color: white; padding: 3.5rem 0 3rem; }
+  .hero h1 { font-size: 2.6rem; font-weight: 900; line-height: 1.2; }
+  .hero-subtitle { font-size: 1.1rem; margin-top: 0.85rem; opacity: 0.95; }
+  .hero-tags { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+  .pill { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.35);
+    padding: 0.3rem 0.85rem; border-radius: 999px; font-size: 0.8rem; font-weight: 500; }
+
+  .arch-box { background: var(--color-card); border: 1px solid var(--color-border);
+    border-radius: 16px; padding: 1.75rem; margin-bottom: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+  .arch-row { display: flex; align-items: center; justify-content: center; gap: 0.8rem; flex-wrap: wrap; }
+  .arch-node { border-radius: 12px; padding: 1rem 1.3rem; text-align: center; min-width: 150px; color: white; }
+  .arch-node small { display:block; font-weight:400; opacity:0.9; font-size:0.75rem; margin-top:0.25rem; }
+  .arch-pi { background: linear-gradient(135deg,#7C3AED,#a855f7); }
+  .arch-nuc { background: linear-gradient(135deg,#1E3A8A,#3B82F6); }
+  .arch-arrow { font-size:1.5rem; color: var(--color-muted); }
+
+  .flow-diagram { display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    padding: 2rem; background: var(--color-card); border: 1px solid var(--color-border);
+    border-radius: 16px; overflow-x: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+  .flow-node { background: var(--color-card); border: 2px solid var(--node-color, var(--color-primary));
+    border-radius: 12px; padding: 1.1rem; text-align: center; min-width: 110px;
+    transition: transform 0.2s, box-shadow 0.2s; }
+  .flow-node:hover { transform: translateY(-4px); box-shadow: 0 8px 25px rgba(0,0,0,0.12); }
+  .flow-node-icon { font-size: 1.8rem; margin-bottom: 0.4rem; }
+  .flow-node-title { font-weight: 700; font-size: 0.9rem; }
+  .flow-node-desc { font-size: 0.78rem; color: var(--color-muted); margin-top: 0.2rem; }
+  .flow-arrow { flex-shrink: 0; }
+
+  .cmd-card { background: var(--color-card); border: 1px solid var(--color-border);
+    border-radius: 16px; overflow: hidden; margin-bottom: 2rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.08); }
+  .cmd-head { display: flex; align-items: center; gap: 0.85rem; padding: 1.1rem 1.5rem;
+    color: white; background: var(--accent, var(--color-primary)); }
+  .cmd-badge { flex-shrink: 0; width: 2.1rem; height: 2.1rem; border-radius: 50%;
+    background: rgba(255,255,255,0.25); border: 2px solid rgba(255,255,255,0.6);
+    display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.05rem; }
+  .cmd-emoji { font-size: 1.7rem; }
+  .cmd-name { font-weight: 700; font-size: 1.15rem; }
+  .cmd-name small { display:block; font-weight:400; font-size:0.8rem; opacity:0.85; margin-top:0.1rem; }
+  .cmd-terminal { background: #0F172A; color: #E2E8F0; padding: 1.1rem 1.5rem; font-size: 0.95rem;
+    display: flex; align-items: center; gap: 0.6rem; overflow-x: auto; font-family: 'JetBrains Mono', monospace; }
+  .cmd-terminal .prompt { color: #4ADE80; user-select: none; }
+  .cmd-terminal code { white-space: nowrap; flex: 1; }
+  .copy-btn { flex-shrink: 0; margin-left: auto; background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.25); color: #E2E8F0; border-radius: 8px;
+    padding: 0.35rem 0.75rem; font-size: 0.8rem; font-family: 'Noto Sans KR', sans-serif;
+    font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; transition: background 0.15s; }
+  .copy-btn:hover { background: rgba(255,255,255,0.22); }
+  .copy-btn.copied { background: var(--color-success); border-color: var(--color-success); color: white; }
+  .cmd-body { padding: 1.5rem; }
+  .cmd-result-label { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.78rem;
+    font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent, var(--color-primary)); margin-bottom: 0.6rem; }
+  .big-easy { font-size: 1.05rem; font-weight: 500; }
+  .mini-steps { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 1rem; }
+  .mini-step { display: flex; gap: 0.75rem; align-items: flex-start; background: var(--color-surface); border-radius: 10px; padding: 0.75rem 1rem; }
+  .mini-step-num { flex-shrink: 0; width: 1.6rem; height: 1.6rem; border-radius: 50%;
+    background: var(--accent, var(--color-primary)); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; }
+  .mini-step-text { font-size: 0.92rem; }
+
+  .analogy-box { display: flex; gap: 1.1rem; padding: 1.25rem; background: var(--color-secondary-light);
+    border-radius: 12px; border-left: 4px solid var(--color-secondary); margin-top: 1rem; }
+  .analogy-icon { font-size: 2rem; flex-shrink: 0; }
+  .analogy-title { font-weight: 700; font-size: 0.8rem; color: var(--color-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; }
+  .analogy-text { line-height: 1.65; font-size: 0.95rem; }
+
+  .callout { display: flex; gap: 0.75rem; padding: 1rem 1.25rem; border-radius: 10px; align-items: flex-start; margin-top: 1.5rem; }
+  .callout-icon { font-size: 1.25rem; flex-shrink: 0; }
+  .callout-content { font-size: 0.95rem; line-height: 1.6; }
+  .callout-tip { background: var(--color-success-light); border-left: 3px solid var(--color-success); }
+  .callout-warning { background: var(--color-warning-light); border-left: 3px solid var(--color-warning); }
+  .callout-danger { background: var(--color-danger-light); border-left: 3px solid var(--color-danger); }
+
+  .info-table { width:100%; border-collapse: collapse; background: var(--color-card);
+    border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-top:1rem; }
+  .info-table th { background: var(--color-primary); color: white; padding: 0.85rem 1rem; text-align: left; font-size: 0.9rem; }
+  .info-table td { padding: 0.8rem 1rem; border-bottom: 1px solid var(--color-border); font-size: 0.9rem; }
+  .info-table tr:last-child td { border-bottom: none; }
+  .info-table code { background: var(--color-surface); padding: 0.15rem 0.4rem; border-radius: 5px; font-size: 0.85rem; }
+
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 2rem; }
+    .flow-diagram { flex-direction: column; } .flow-arrow svg { transform: rotate(90deg); }
+    .arch-arrow { transform: rotate(90deg); }
+  }
+  @media print {
+    .hero { background: white !important; color: black !important; }
+    .cmd-head { color: black !important; -webkit-print-color-adjust: exact; }
+    .copy-btn { display: none; }
+    .flow-node:hover { transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="container">
+    <div class="hero-tags">
+      <span class="pill">Raspberry Pi 5</span>
+      <span class="pill">NUC PC</span>
+      <span class="pill">USB 카메라 2대</span>
+      <span class="pill">GStreamer 없음</span>
+    </div>
+    <h1>실습 가이드 카메라 서버 (Pi5 ↔ NUC)</h1>
+    <p class="hero-subtitle">라즈베리파이5에 달린 카메라 2대를, NUC 컴퓨터에서 한 화면으로 보는 시스템을 직접 만들어 봅니다. (실습자료 ①)</p>
+  </div>
+</div>
+
+<section>
+  <div class="container">
+    <h2 class="section-title">🎯 무엇을 만드나요?</h2>
+    <p class="section-lead">라즈베리파이5(Pi5)는 카메라 영상만 보내고, 무거운 일(영상 처리·화면 표시)은 NUC가 맡습니다. 역할을 나눠서 Pi5가 힘들지 않게 하는 게 핵심이에요.</p>
+
+    <div class="arch-box">
+      <div class="arch-row">
+        <div class="arch-node arch-pi">🍓 Pi5 (192.168.50.111)<small>카메라 잡아서 보내기만</small></div>
+        <span class="arch-arrow">➡️</span>
+        <div class="arch-node arch-nuc">🖥️ NUC (192.168.50.237)<small>받아서 화면에 보여주기</small></div>
+      </div>
+    </div>
+
+    <div class="analogy-box">
+      <div class="analogy-icon">📮</div>
+      <div class="analogy-content">
+        <div class="analogy-title">쉽게 말하면</div>
+        <p class="analogy-text">Pi5는 <strong>택배를 부치는 사람</strong>이에요. 사진(영상)을 상자에 담아 보내기만 합니다. NUC는 <strong>택배를 받아서 펼쳐 보는 사람</strong>이고요. 무거운 짐 정리는 받는 쪽이 다 해요.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="background:#fff;">
+  <div class="container">
+    <h2 class="section-title">👀 한눈에 보기</h2>
+    <p class="section-lead">아래 순서대로 따라 하면 됩니다. 1~4번은 점검, 5~6번은 실행이에요.</p>
+    <div class="flow-diagram">
+      <div class="flow-node" style="--node-color:#64748B"><div class="flow-node-icon">🔌</div><div class="flow-node-title">1. 카메라 확인</div><div class="flow-node-desc">장치 번호 찾기</div></div>
+      <div class="flow-arrow"><svg width="34" height="24" viewBox="0 0 40 24"><path d="M0 12h30M24 4l8 8-8 8" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+      <div class="flow-node" style="--node-color:#64748B"><div class="flow-node-icon">🚪</div><div class="flow-node-title">2. 포트 확인</div><div class="flow-node-desc">8000·8001 비었나</div></div>
+      <div class="flow-arrow"><svg width="34" height="24" viewBox="0 0 40 24"><path d="M0 12h30M24 4l8 8-8 8" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+      <div class="flow-node" style="--node-color:#64748B"><div class="flow-node-icon">🔓</div><div class="flow-node-title">3. 점유 확인</div><div class="flow-node-desc">다른 게 쓰나</div></div>
+      <div class="flow-arrow"><svg width="34" height="24" viewBox="0 0 40 24"><path d="M0 12h30M24 4l8 8-8 8" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+      <div class="flow-node" style="--node-color:#2563EB"><div class="flow-node-icon">🍓</div><div class="flow-node-title">4. Pi5 실행</div><div class="flow-node-desc">서버 켜기</div></div>
+      <div class="flow-arrow"><svg width="34" height="24" viewBox="0 0 40 24"><path d="M0 12h30M24 4l8 8-8 8" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+      <div class="flow-node" style="--node-color:#7C3AED"><div class="flow-node-icon">🖥️</div><div class="flow-node-title">5. NUC 실행</div><div class="flow-node-desc">받기 시작</div></div>
+      <div class="flow-arrow"><svg width="34" height="24" viewBox="0 0 40 24"><path d="M0 12h30M24 4l8 8-8 8" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+      <div class="flow-node" style="--node-color:#059669"><div class="flow-node-icon">🌐</div><div class="flow-node-title">6. 브라우저</div><div class="flow-node-desc">영상 확인</div></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <h2 class="section-title">📋 단계별 실습</h2>
+    <p class="section-lead">명령어를 한 줄씩 따라 치면 됩니다. 복사 버튼을 누르면 그대로 붙여넣을 수 있어요.</p>
+
+    <!-- 1 -->
+    <div class="cmd-card" style="--accent:#64748B;">
+      <div class="cmd-head"><span class="cmd-badge">1</span><span class="cmd-emoji">🔌</span><div class="cmd-name">카메라 장치 찾기<small>Pi5에서 — 카메라가 몇 번인지 확인</small></div></div>
+      <div class="cmd-terminal"><span class="prompt">$</span><code>v4l2-ctl --list-devices</code><button class="copy-btn" data-cmd="v4l2-ctl --list-devices">📋 복사</button></div>
+      <div class="cmd-body">
+        <div class="cmd-result-label">▶ 이렇게 하면</div>
+        <p class="big-easy">연결된 카메라마다 <strong>/dev/videoN</strong> 번호가 쭉 나와요.</p>
+        <div class="mini-steps">
+          <div class="mini-step"><span class="mini-step-num">1</span><span class="mini-step-text">카메라 이름(예: KINGSEN CAM, USB Camera) 밑에 video 번호가 보여요.</span></div>
+          <div class="mini-step"><span class="mini-step-num">2</span><span class="mini-step-text">보통 카메라 1대가 번호 2개를 차지해요. 앞 번호가 영상용이에요.</span></div>
+          <div class="mini-step"><span class="mini-step-num">3</span><span class="mini-step-text">어떤 포맷을 지원하는지도 확인: <code>v4l2-ctl -d /dev/video1 --list-formats-ext</code></span></div>
+        </div>
+        <div class="callout callout-warning"><span class="callout-icon">⚠️</span><span class="callout-content"><strong>주의:</strong> 카메라를 다른 USB 구멍에 꽂거나 재부팅하면 번호가 <strong>바뀔 수 있어요</strong>. 실행이 안 되면 이 명령으로 번호부터 다시 확인하세요.</span></div>
+      </div>
+    </div>
+
+    <!-- 2 -->
+    <div class="cmd-card" style="--accent:#64748B;">
+      <div class="cmd-head"><span class="cmd-badge">2</span><span class="cmd-emoji">🚪</span><div class="cmd-name">포트가 비었는지 확인<small>Pi5에서 — 8000·8001번 문이 열려 있나</small></div></div>
+      <div class="cmd-terminal"><span class="prompt">$</span><code>sudo ss -tlnp | grep -E ':8000|:8001'</code><button class="copy-btn" data-cmd="sudo ss -tlnp | grep -E ':8000|:8001'">📋 복사</button></div>
+      <div class="cmd-body">
+        <div class="cmd-result-label">▶ 이렇게 하면</div>
+        <p class="big-easy"><strong>아무것도 안 나오면 비어 있는 것</strong> — 그대로 쓰면 돼요.</p>
+        <div class="mini-steps">
+          <div class="mini-step"><span class="mini-step-num">1</span><span class="mini-step-text">8000은 front 카메라, 8001은 top 카메라가 쓸 문(포트)이에요.</span></div>
+          <div class="mini-step"><span class="mini-step-num">2</span><span class="mini-step-text">뭔가 나오면 이미 다른 프로그램이 그 문을 쓰는 중이라 충돌해요.</span></div>
+        </div>
+        <div class="analogy-box"><div class="analogy-icon">🚪</div><div class="analogy-content"><div class="analogy-title">쉽게 말하면</div><p class="analogy-text">포트는 <strong>건물의 문 번호</strong>예요. 같은 문으로 두 사람이 동시에 못 들어가듯, 한 포트는 한 프로그램만 써요.</p></div></div>
+      </div>
+    </div>
+
+    <!-- 3 -->
+    <div class="cmd-card" style="--accent:#64748B;">
+      <div class="cmd-head"><span class="cmd-badge">3</span><span class="cmd-emoji">🔓</span><div class="cmd-name">카메라를 다른 게 쓰는지 확인<small>Pi5에서 — 카메라 점유 검사</small></div></div>
+      <div class="cmd-terminal"><span class="prompt">$</span><code>sudo fuser /dev/video1 /dev/video2</code><button class="copy-btn" data-cmd="sudo fuser /dev/video1 /dev/video2">📋 복사</button></div>
+      <div class="cmd-body">
+        <div class="cmd-result-label">▶ 이렇게 하면</div>
+        <p class="big-easy">번호(PID)가 나오면 <strong>이미 다른 프로그램이 카메라를 잡고 있는</strong> 거예요.</p>
+        <div class="mini-steps">
+          <div class="mini-step"><span class="mini-step-num">1</span><span class="mini-step-text">카메라는 한 번에 한 프로그램만 열 수 있어요.</span></div>
+          <div class="mini-step"><span class="mini-step-num">2</span><span class="mini-step-text">잡고 있는 걸 끄려면: <code>sudo fuser -k /dev/video2</code></span></div>
+        </div>
+        <div class="callout callout-danger"><span class="callout-icon">🛑</span><span class="callout-content"><strong>중요:</strong> front 카메라를 ACT 학습 프로그램(lekiwi_host)이 쓰고 있으면, 같은 카메라를 이 서버가 동시에 못 열어요. 그럴 땐 top 카메라만 켜세요.</span></div>
+      </div>
+    </div>
+
+    <!-- 4 -->
+    <div class="cmd-card" style="--accent:#2563EB;">
+      <div class="cmd-head"><span class="cmd-badge">4</span><span class="cmd-emoji">🍓</span><div class="cmd-name">Pi5 카메라 서버 켜기<small>Pi5에서 — 영상 보내기 시작</small></div></div>
+      <div class="cmd-terminal"><span class="prompt">$</span><code>python3 camera_server_pi5_v2.py</code><button class="copy-btn" data-cmd="python3 camera_server_pi5_v2.py">📋 복사</button></div>
+      <div class="cmd-body">
+        <div class="cmd-result-label">▶ 이렇게 하면</div>
+        <p class="big-easy">두 카메라가 켜지고 <strong>NUC가 접속하기를 기다려요.</strong></p>
+        <div class="mini-steps">
+          <div class="mini-step"><span class="mini-step-num">1</span><span class="mini-step-text">front는 8000번, top은 8001번 문을 열고 대기해요.</span></div>
+          <div class="mini-step"><span class="mini-step-num">2</span><span class="mini-step-text">카메라 번호가 다르면 직접 지정: <code>--front /dev/video1 --top /dev/video2</code></span></div>
+          <div class="mini-step"><span class="mini-step-num">3</span><span class="mini-step-text">"TCP 서버 대기" 글자가 보이면 성공이에요.</span></div>
+        </div>
+        <div class="callout callout-tip"><span class="callout-icon">💡</span><span class="callout-content"><strong>팁:</strong> 이 서버는 무거운 H.264 인코딩을 안 해요. 카메라가 만든 JPEG를 가볍게 보내기만 해서 Pi5가 힘들지 않아요.</span></div>
+      </div>
+    </div>
+
+    <!-- 5 -->
+    <div class="cmd-card" style="--accent:#7C3AED;">
+      <div class="cmd-head"><span class="cmd-badge">5</span><span class="cmd-emoji">🖥️</span><div class="cmd-name">NUC 모니터 켜기<small>NUC에서 — 영상 받기 시작</small></div></div>
+      <div class="cmd-terminal"><span class="prompt">$</span><code>python3 camera_monitor_nuc_v2.py</code><button class="copy-btn" data-cmd="python3 camera_monitor_nuc_v2.py">📋 복사</button></div>
+      <div class="cmd-body">
+        <div class="cmd-result-label">▶ 이렇게 하면</div>
+        <p class="big-easy">NUC가 Pi5에 접속해서 <strong>두 카메라 영상을 받아오기</strong> 시작해요.</p>
+        <div class="mini-steps">
+          <div class="mini-step"><span class="mini-step-num">1</span><span class="mini-step-text">"Pi5 연결 성공" 글자가 두 번(front·top) 나오면 잘 된 거예요.</span></div>
+          <div class="mini-step"><span class="mini-step-num">2</span><span class="mini-step-text">Pi5 주소가 다르면: <code>python3 camera_monitor_nuc_v2.py --pi5 192.168.50.111</code></span></div>
+        </div>
+        <div class="callout callout-warning"><span class="callout-icon">⚠️</span><span class="callout-content"><strong>주의:</strong> 반드시 Pi5 서버(4번)를 <strong>먼저</strong> 켠 다음 NUC(5번)를 켜세요. 순서가 바뀌면 "연결 끊김"이 반복돼요.</span></div>
+      </div>
+    </div>
+
+    <!-- 6 -->
+    <div class="cmd-card" style="--accent:#059669;">
+      <div class="cmd-head"><span class="cmd-badge">6</span><span class="cmd-emoji">🌐</span><div class="cmd-name">브라우저로 영상 보기<small>NUC(또는 같은 네트워크 PC)에서</small></div></div>
+      <div class="cmd-terminal"><span class="prompt">$</span><code>http://192.168.50.237:8080</code><button class="copy-btn" data-cmd="http://192.168.50.237:8080">📋 복사</button></div>
+      <div class="cmd-body">
+        <div class="cmd-result-label">▶ 이렇게 하면</div>
+        <p class="big-easy">웹 브라우저에 <strong>두 카메라 영상이 나란히</strong> 뜨면 완성이에요! 🎉</p>
+        <div class="mini-steps">
+          <div class="mini-step"><span class="mini-step-num">1</span><span class="mini-step-text">왼쪽은 FRONT(ACT 학습용), 오른쪽은 TOP(장애물 예측용)이에요.</span></div>
+          <div class="mini-step"><span class="mini-step-num">2</span><span class="mini-step-text">화면이 안 뜨면 ffplay로 따로 확인: <code>nc -zv 192.168.50.111 8001</code> 로 길이 열렸는지 점검.</span></div>
+        </div>
+        <div class="analogy-box"><div class="analogy-icon">📺</div><div class="analogy-content"><div class="analogy-title">쉽게 말하면</div><p class="analogy-text">CCTV 두 대를 한 모니터에 띄운 것과 같아요. Pi5가 찍은 걸 NUC가 받아 웹페이지로 보여주는 거예요.</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="background:#fff;">
+  <div class="container">
+    <h2 class="section-title">📑 카메라 역할 정리</h2>
+    <table class="info-table">
+      <tr><th>카메라</th><th>장치(예시)</th><th>포트</th><th>역할</th></tr>
+      <tr><td>FRONT (KINGSEN)</td><td><code>/dev/video1</code></td><td>8000</td><td>ACT 학습 데이터 수집 (바닥 시점)</td></tr>
+      <tr><td>TOP (USB Camera)</td><td><code>/dev/video2</code></td><td>8001</td><td>장애물 예측 (전방 시점)</td></tr>
+    </table>
+    <div class="callout callout-tip" style="margin-top:1.5rem;"><span class="callout-icon">💡</span><span class="callout-content"><strong>팁:</strong> 카메라 번호가 자꾸 바뀌면 <code>/dev/v4l/by-id/</code> 경로를 쓰면 고정돼요. <code>ls -l /dev/v4l/by-id/</code> 로 확인하세요.</span></div>
+  </div>
+</section>
+
+<script>
+  document.querySelectorAll('.copy-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var cmd = btn.getAttribute('data-cmd');
+      var done = function () {
+        var original = btn.innerHTML;
+        btn.innerHTML = '✅ 복사됨'; btn.classList.add('copied');
+        setTimeout(function () { btn.innerHTML = original; btn.classList.remove('copied'); }, 1500);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(cmd).then(done).catch(function () { fallbackCopy(cmd, done); });
+      } else { fallbackCopy(cmd, done); }
+    });
+  });
+  function fallbackCopy(text, done) {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta); done();
+  }
+</script>
+</body>
+</html>

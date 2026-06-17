@@ -1,0 +1,1664 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>실습자료 1 — IP 카메라 NUC 직접 연결 (단계별 풀이)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --color-primary: #2563EB;
+  --color-primary-light: #DBEAFE;
+  --color-primary-dark: #1E40AF;
+  --color-secondary: #7C3AED;
+  --color-secondary-light: #EDE9FE;
+  --color-success: #059669;
+  --color-success-light: #D1FAE5;
+  --color-warning: #D97706;
+  --color-warning-light: #FEF3C7;
+  --color-danger: #DC2626;
+  --color-danger-light: #FEE2E2;
+  --color-surface: #F8FAFC;
+  --color-card: #FFFFFF;
+  --color-text: #1E293B;
+  --color-muted: #64748B;
+  --color-border: #E2E8F0;
+}
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+  color: var(--color-text);
+  background: var(--color-surface);
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+code, pre { font-family: 'JetBrains Mono', monospace; }
+.container { max-width: 920px; margin: 0 auto; padding: 0 1.5rem; }
+section { padding: 3rem 0; }
+.section-title { font-size: 1.85rem; font-weight: 700; margin-bottom: 0.5rem; }
+.section-lead { color: var(--color-muted); margin-bottom: 2rem; font-size: 1rem; }
+
+/* === 히어로 === */
+.hero {
+  background: linear-gradient(135deg, #0F172A 0%, #1E3A8A 40%, #2563EB 100%);
+  color: white;
+  padding: 4.5rem 0 3.5rem;
+  position: relative;
+  overflow: hidden;
+}
+.hero::after {
+  content: '⌨️';
+  position: absolute;
+  font-size: 13rem;
+  right: 2%;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.08;
+}
+.hero .container { position: relative; z-index: 1; }
+.hero-tags { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.pill {
+  background: rgba(255,255,255,0.18);
+  border: 1px solid rgba(255,255,255,0.3);
+  padding: 0.35rem 0.95rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  backdrop-filter: blur(8px);
+}
+.hero-eyebrow {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  opacity: 0.9;
+  margin-bottom: 0.5rem;
+}
+.hero h1 { font-size: 2.7rem; font-weight: 900; line-height: 1.2; margin-bottom: 0.5rem; }
+.hero-subtitle { font-size: 1.15rem; margin-top: 1rem; opacity: 0.95; max-width: 720px; line-height: 1.7; }
+.hero-meta {
+  margin-top: 1.75rem;
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+  opacity: 0.95;
+}
+
+/* === 시작 박스 === */
+.start-box {
+  background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+  border-radius: 16px;
+  padding: 1.75rem 2rem;
+  margin-bottom: 2rem;
+  border: 1px solid #BFDBFE;
+}
+.start-box-title {
+  font-weight: 700;
+  color: #1E3A8A;
+  font-size: 1.15rem;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.start-box p { font-size: 0.95rem; line-height: 1.7; color: #1E3A8A; }
+.start-box ul { margin: 0.75rem 0 0 1.5rem; }
+.start-box li { font-size: 0.95rem; line-height: 1.7; }
+
+/* === 플로우 다이어그램 === */
+.flow-diagram {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.4rem;
+  padding: 1.5rem 1rem;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  overflow-x: auto;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  margin-bottom: 2rem;
+}
+.flow-node {
+  background: var(--color-card);
+  border: 2px solid var(--node-color, var(--color-primary));
+  border-radius: 12px;
+  padding: 0.85rem 0.6rem;
+  text-align: center;
+  min-width: 95px;
+  flex-shrink: 0;
+}
+.flow-node-icon { font-size: 1.4rem; margin-bottom: 0.3rem; }
+.flow-node-title { font-weight: 700; font-size: 0.78rem; }
+.flow-node-desc { font-size: 0.68rem; color: var(--color-muted); margin-top: 0.15rem; }
+.flow-arrow { flex-shrink: 0; color: #94A3B8; font-weight: 700; }
+
+/* === 단계 카드 (큰 카드) === */
+.step-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  overflow: hidden;
+  margin-bottom: 2.5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+.step-head {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem 2rem;
+  color: white;
+  background: var(--accent, linear-gradient(135deg, #2563EB, #1E40AF));
+}
+.step-badge {
+  flex-shrink: 0;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  border: 2px solid rgba(255,255,255,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 1.35rem;
+}
+.step-emoji { font-size: 2rem; }
+.step-name { flex: 1; }
+.step-name-title { font-weight: 700; font-size: 1.3rem; line-height: 1.3; }
+.step-name-subtitle { font-weight: 400; font-size: 0.85rem; opacity: 0.9; margin-top: 0.2rem; }
+
+/* === 단계 본문 === */
+.step-body { padding: 2rem; }
+
+/* === 왜 박스 === */
+.why-box {
+  background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #FCD34D;
+}
+.why-title {
+  font-weight: 700;
+  color: #78350F;
+  margin-bottom: 0.6rem;
+  font-size: 1.02rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.why-content {
+  font-size: 0.97rem;
+  line-height: 1.75;
+  color: #78350F;
+}
+
+/* === 명령어 박스 === */
+.cmd-box {
+  background: #0F172A;
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  margin: 1.25rem 0;
+  position: relative;
+}
+.cmd-box-label {
+  color: #94A3B8;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.cmd-box code {
+  color: #E2E8F0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  display: block;
+  line-height: 1.7;
+  font-family: 'JetBrains Mono', monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.cmd-box .prompt { color: #4ADE80; user-select: none; margin-right: 0.5rem; }
+.cmd-box .opt { color: #FCD34D; }
+.cmd-box .str { color: #67E8F9; }
+.cmd-box .comment { color: #64748B; font-style: italic; }
+.copy-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: #E2E8F0;
+  border-radius: 8px;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.78rem;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+}
+.copy-btn:hover { background: rgba(255,255,255,0.22); }
+.copy-btn.copied { background: var(--color-success); border-color: var(--color-success); }
+
+/* === 명령어 분해 (옵션별 설명) === */
+.cmd-breakdown {
+  background: var(--color-surface);
+  border-radius: 14px;
+  padding: 1.5rem;
+  margin: 1.25rem 0;
+  border: 1px solid var(--color-border);
+}
+.cmd-breakdown-title {
+  font-weight: 700;
+  color: var(--color-text);
+  font-size: 1.02rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.cmd-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.cmd-table tr td {
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.92rem;
+  vertical-align: top;
+}
+.cmd-table tr:last-child td { border-bottom: none; }
+.cmd-table td:first-child {
+  width: 35%;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--color-primary);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.cmd-table td:last-child {
+  color: var(--color-text);
+  line-height: 1.65;
+}
+
+/* === 예상 출력 === */
+.output-box {
+  background: #0F172A;
+  color: #94A3B8;
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  margin: 1rem 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  line-height: 1.7;
+  overflow-x: auto;
+  border-left: 4px solid var(--color-primary);
+}
+.output-box .ok { color: #6EE7B7; }
+.output-box .ip { color: #FCD34D; }
+.output-box .key { color: #F472B6; }
+.output-box .comment { color: #64748B; font-style: italic; }
+.output-box .err { color: #FCA5A5; }
+.output-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-muted);
+  margin: 1.5rem 0 0.5rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* === 해석 박스 === */
+.interpret-box {
+  background: var(--color-primary-light);
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  margin: 1rem 0;
+  border-left: 4px solid var(--color-primary);
+}
+.interpret-title {
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  font-size: 1rem;
+  margin-bottom: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.interpret-list { list-style: none; padding: 0; }
+.interpret-list li {
+  padding: 0.4rem 0 0.4rem 1.5rem;
+  position: relative;
+  font-size: 0.94rem;
+  line-height: 1.65;
+  color: var(--color-primary-dark);
+}
+.interpret-list li::before {
+  content: "•";
+  position: absolute;
+  left: 0.5rem;
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+/* === 비유 박스 === */
+.analogy-box {
+  display: flex;
+  gap: 1.1rem;
+  padding: 1.35rem 1.5rem;
+  background: var(--color-secondary-light);
+  border-radius: 14px;
+  border-left: 4px solid var(--color-secondary);
+  margin: 1.25rem 0;
+}
+.analogy-icon { font-size: 2.2rem; flex-shrink: 0; }
+.analogy-title {
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--color-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.4rem;
+}
+.analogy-text { line-height: 1.7; font-size: 0.95rem; color: #4C1D95; }
+
+/* === 콜아웃 === */
+.callout {
+  display: flex;
+  gap: 0.85rem;
+  padding: 1.1rem 1.35rem;
+  border-radius: 12px;
+  align-items: flex-start;
+  margin: 1.25rem 0;
+}
+.callout-icon { font-size: 1.35rem; flex-shrink: 0; padding-top: 0.05rem; }
+.callout-content { font-size: 0.95rem; line-height: 1.7; }
+.callout-tip { background: var(--color-success-light); border-left: 3px solid var(--color-success); color: #064E3B; }
+.callout-warning { background: var(--color-warning-light); border-left: 3px solid var(--color-warning); color: #78350F; }
+.callout-danger { background: var(--color-danger-light); border-left: 3px solid var(--color-danger); color: #7F1D1D; }
+.callout-info { background: var(--color-primary-light); border-left: 3px solid var(--color-primary); color: #1E3A8A; }
+
+/* === 결과 분기 (성공/실패) === */
+.result-branches {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+.branch {
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  border: 2px solid;
+}
+.branch-success {
+  background: var(--color-success-light);
+  border-color: var(--color-success);
+  color: #064E3B;
+}
+.branch-fail {
+  background: var(--color-danger-light);
+  border-color: var(--color-danger);
+  color: #7F1D1D;
+}
+.branch-title {
+  font-weight: 700;
+  font-size: 1.02rem;
+  margin-bottom: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.branch-content { font-size: 0.93rem; line-height: 1.7; }
+.branch-content ul { margin-left: 1.25rem; margin-top: 0.4rem; }
+@media (max-width: 640px) {
+  .result-branches { grid-template-columns: 1fr; }
+}
+
+/* === 다음 단계 안내 === */
+.next-step {
+  background: linear-gradient(135deg, #EFF6FF, #DBEAFE);
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  margin-top: 2rem;
+  border: 1px dashed var(--color-primary);
+  text-align: center;
+}
+.next-step-text {
+  font-size: 0.95rem;
+  color: #1E3A8A;
+}
+.next-step-text strong { color: var(--color-primary-dark); }
+
+/* === 테이블 === */
+.data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 1.25rem 0;
+  background: var(--color-card);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  font-size: 0.9rem;
+}
+.data-table thead { background: var(--color-primary); color: white; }
+.data-table th { padding: 0.75rem 1rem; text-align: left; font-weight: 700; font-size: 0.88rem; }
+.data-table td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--color-border); }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table code { background: var(--color-surface); padding: 0.15rem 0.45rem; border-radius: 4px; font-size: 0.85rem; }
+
+/* === 체크리스트 === */
+.checklist {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 1.75rem;
+  margin-top: 1.5rem;
+}
+.checklist-title { font-weight: 700; margin-bottom: 1rem; color: var(--color-text); font-size: 1.1rem; }
+.checklist-item {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.6rem 0;
+  align-items: flex-start;
+  font-size: 0.95rem;
+  border-bottom: 1px dashed var(--color-border);
+}
+.checklist-item:last-child { border-bottom: none; }
+.checklist-box {
+  flex-shrink: 0;
+  width: 1.2rem;
+  height: 1.2rem;
+  border: 2px solid var(--color-border);
+  border-radius: 4px;
+  margin-top: 0.15rem;
+}
+
+/* === 가독성 향상 === */
+.body-text {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--color-text);
+  margin-bottom: 1rem;
+}
+.body-text strong { color: var(--color-primary-dark); font-weight: 700; }
+
+@media (max-width: 768px) {
+  .hero h1 { font-size: 1.9rem; }
+  .hero-subtitle { font-size: 1rem; }
+  .hero::after { display: none; }
+  .step-body { padding: 1.5rem; }
+  .step-head { padding: 1.25rem; }
+  .flow-diagram { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============== 히어로 ============== -->
+<header class="hero">
+  <div class="container">
+    <div class="hero-tags">
+      <span class="pill">📷 IP Camera</span>
+      <span class="pill">🔌 NUC 직접 연결</span>
+      <span class="pill">⌨️ 명령어 학습</span>
+      <span class="pill">🎓 풀이형 가이드</span>
+    </div>
+    <div class="hero-eyebrow">실습자료 1 · 단계별 풀이 V2</div>
+    <h1>IP 카메라 NUC 직접 연결</h1>
+    <p class="hero-subtitle">
+      셸 스크립트 없이 <strong>명령어를 한 줄씩 직접 타이핑</strong>하면서 각 명령어가 무엇을 하는지,
+      각 옵션이 어떤 의미인지, 출력을 어떻게 해석하는지 풀어서 배우는 학습형 가이드입니다.
+    </p>
+    <div class="hero-meta">
+      <div>⏱️ 예상 소요: 60~90분 (학습 포함)</div>
+      <div>🎯 난이도: 입문 (명령어 처음)</div>
+      <div>📚 9단계 완전 풀이</div>
+    </div>
+  </div>
+</header>
+
+<!-- ============== 시작 전 안내 ============== -->
+<section>
+  <div class="container">
+    <div class="start-box">
+      <div class="start-box-title">👋 시작하기 전에 — 이 자료의 학습 방식</div>
+      <p>
+        이 자료는 빅맥님이 평소 사용하시는 자동 실행 스크립트(<code>.sh</code>)와 다르게,
+        <strong>모든 명령어를 직접 터미널에 타이핑하면서 따라하는</strong> 학습용입니다.
+      </p>
+      <ul>
+        <li>각 단계마다 <strong>"왜 이 명령어가 필요한가"</strong>부터 풀어서 설명</li>
+        <li>명령어의 모든 옵션을 <strong>단어 하나하나</strong> 분해해 의미 설명</li>
+        <li>예상 출력 + 출력을 어떻게 읽는지 단계별 해석</li>
+        <li>성공 / 실패 시 각각 어떻게 진행할지 명확한 분기</li>
+      </ul>
+    </div>
+
+    <h2 class="section-title">🎯 이 실습의 목표</h2>
+    <p class="body-text">
+      카메라와 NUC 두 대를 <strong>랜선 하나로 직접 연결</strong>한 <strong>완전히 격리된 작은 망</strong>을 만들고,
+      그 안에서 카메라 영상을 실시간으로 시청할 수 있게 합니다.
+      셋업이 끝나면 카메라는 외부 네트워크와 완전히 분리된 안전한 상태가 됩니다.
+    </p>
+
+    <div class="analogy-box">
+      <div class="analogy-icon">🏠</div>
+      <div>
+        <div class="analogy-title">쉽게 말하면</div>
+        <p class="analogy-text">"<strong>둘이서만 이야기하는 비밀 통로</strong>"를 만드는 작업입니다. 카메라와 NUC만 아는 통로라서 다른 누구도 들어올 수 없는 안전한 상태가 됩니다.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== 9단계 흐름도 ============== -->
+<section style="background: var(--color-card);">
+  <div class="container">
+    <h2 class="section-title">한눈에 보기 — 9단계 흐름</h2>
+    <p class="section-lead">각 단계를 클릭하지 않아도 됩니다. 아래에서 차례대로 설명합니다.</p>
+
+    <div class="flow-diagram">
+      <div class="flow-node" style="--node-color: #64748B">
+        <div class="flow-node-icon">📋</div>
+        <div class="flow-node-title">1. 인터페이스</div>
+        <div class="flow-node-desc">확인</div>
+      </div>
+      <div class="flow-arrow">▶</div>
+      <div class="flow-node" style="--node-color: #2563EB">
+        <div class="flow-node-icon">🔍</div>
+        <div class="flow-node-title">2. 카메라 IP</div>
+        <div class="flow-node-desc">발견</div>
+      </div>
+      <div class="flow-arrow">▶</div>
+      <div class="flow-node" style="--node-color: #2563EB">
+        <div class="flow-node-icon">📍</div>
+        <div class="flow-node-title">3. 현재 IP</div>
+        <div class="flow-node-desc">확인</div>
+      </div>
+      <div class="flow-arrow">▶</div>
+      <div class="flow-node" style="--node-color: #7C3AED">
+        <div class="flow-node-icon">⚙️</div>
+        <div class="flow-node-title">4. IP 설정</div>
+        <div class="flow-node-desc">고정</div>
+      </div>
+      <div class="flow-arrow">▶</div>
+      <div class="flow-node" style="--node-color: #7C3AED">
+        <div class="flow-node-icon">🔄</div>
+        <div class="flow-node-title">5. 적용</div>
+        <div class="flow-node-desc">down/up</div>
+      </div>
+      <div class="flow-arrow">▶</div>
+      <div class="flow-node" style="--node-color: #7C3AED">
+        <div class="flow-node-icon">✓</div>
+        <div class="flow-node-title">6. 확인</div>
+        <div class="flow-node-desc">검증</div>
+      </div>
+      <div class="flow-arrow">▶</div>
+      <div class="flow-node" style="--node-color: #D97706">
+        <div class="flow-node-icon">📡</div>
+        <div class="flow-node-title">7. ping</div>
+        <div class="flow-node-desc">통신 확인</div>
+      </div>
+      <div class="flow-arrow">▶</div>
+      <div class="flow-node" style="--node-color: #D97706">
+        <div class="flow-node-icon">🎬</div>
+        <div class="flow-node-title">8. RTSP</div>
+        <div class="flow-node-desc">URL 검증</div>
+      </div>
+      <div class="flow-arrow">▶</div>
+      <div class="flow-node" style="--node-color: #059669">
+        <div class="flow-node-icon">📺</div>
+        <div class="flow-node-title">9. 시청</div>
+        <div class="flow-node-desc">ffplay</div>
+      </div>
+    </div>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">💡</span>
+      <div class="callout-content"><strong>9단계의 그룹화:</strong> 단계 1~3은 <strong>현재 상태 확인</strong>, 4~6은 <strong>네트워크 설정</strong>, 7~9는 <strong>통신 검증과 영상 시청</strong>입니다.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ====================================================== -->
+<!-- ============== 단계 1 — 인터페이스 확인 ============== -->
+<!-- ====================================================== -->
+<section>
+  <div class="container">
+
+    <div class="step-card">
+      <div class="step-head" style="--accent: linear-gradient(135deg, #64748B, #475569);">
+        <div class="step-badge">1</div>
+        <div class="step-emoji">📋</div>
+        <div class="step-name">
+          <div class="step-name-title">네트워크 인터페이스 확인</div>
+          <div class="step-name-subtitle">NUC에 어떤 네트워크 포트가 있는지 알아내기</div>
+        </div>
+      </div>
+
+      <div class="step-body">
+
+        <div class="why-box">
+          <div class="why-title">🤔 왜 이 단계가 필요한가요?</div>
+          <div class="why-content">
+            NUC에는 여러 개의 네트워크 포트가 있습니다 — 이더넷(랜선) 포트, 내장 WiFi, USB WiFi 등.
+            이 중에 <strong>"카메라 랜선을 꽂을 이더넷 포트"의 정확한 이름</strong>을 알아내야 합니다.
+            이름은 NUC마다 다를 수 있어요. 흔한 이름은 <code>eno1</code>, <code>eth0</code>, <code>enp3s0</code>입니다.
+            이 이름을 알아야 다음 단계들에서 "이 포트를 설정해줘"라고 시스템에 정확히 지시할 수 있습니다.
+          </div>
+        </div>
+
+        <div class="cmd-box">
+          <button class="copy-btn" data-cmd="nmcli device status">📋 복사</button>
+          <div class="cmd-box-label">⌨️ 터미널에 입력</div>
+          <code><span class="prompt">$</span>nmcli device status</code>
+        </div>
+
+        <div class="cmd-breakdown">
+          <div class="cmd-breakdown-title">📖 명령어 분해 — 단어별 의미</div>
+          <table class="cmd-table">
+            <tr><td>nmcli</td><td>NetworkManager Command Line Interface의 줄임말. 우분투의 네트워크 설정을 명령어로 조작할 수 있는 도구입니다.</td></tr>
+            <tr><td>device</td><td>"장치"를 다루겠다는 의미. NetworkManager가 인식하는 모든 네트워크 장치 정보를 가져옵니다.</td></tr>
+            <tr><td>status</td><td>"상태"를 보여달라는 의미. 각 장치가 현재 어떤 상태인지(연결됨/끊김/사용불가) 출력합니다.</td></tr>
+          </table>
+        </div>
+
+        <div class="output-label">🖥️ 예상 출력 (NUC마다 약간 다름)</div>
+        <div class="output-box">
+DEVICE             TYPE      STATE           CONNECTION
+<span class="ok">wlp0s20f3</span>          wifi      연결됨          NTH215
+<span class="ok">wlx002e2d40106e</span>    wifi      연결됨          zeta_amr_rnd 3
+<span class="ip">eno1</span>               <span class="key">ethernet</span>  사용할 수 없음   --
+lo                 loopback  연결됨 (외부)   lo
+p2p-dev-wlp0s20f3  wifi-p2p  연결 해제       --</div>
+
+        <div class="interpret-box">
+          <div class="interpret-title">💡 출력을 읽는 법</div>
+          <ul class="interpret-list">
+            <li><strong>4개의 열</strong>로 출력됩니다: DEVICE(장치 이름) / TYPE(종류) / STATE(상태) / CONNECTION(연결 프로필명)</li>
+            <li>우리가 찾는 것은 <strong>TYPE이 'ethernet'인 줄</strong>입니다. 위 예시에서는 <code>eno1</code>입니다.</li>
+            <li>STATE는 지금은 '사용할 수 없음'일 수 있어요 — 케이블이 안 꽂혀 있어서 그렇습니다. 정상입니다.</li>
+            <li>WiFi 두 개(wlp0s20f3, wlx002e2d40106e)는 무시해도 됩니다. 우리는 유선 직결이니까요.</li>
+          </ul>
+        </div>
+
+        <div class="callout callout-tip">
+          <span class="callout-icon">📝</span>
+          <div class="callout-content"><strong>중요 — 메모하세요:</strong> 본인 NUC의 이더넷 인터페이스 이름을 적어두세요. 다음 단계들에서 계속 사용합니다. 예: <code>eno1</code></div>
+        </div>
+
+        <div class="next-step">
+          <div class="next-step-text">
+            ✅ 이더넷 인터페이스 이름을 확인했나요? &nbsp;<strong>→ 단계 2로 이동</strong>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+<!-- ====================================================== -->
+<!-- ============== 단계 2 — tcpdump으로 IP 발견 ============== -->
+<!-- ====================================================== -->
+    <div class="step-card">
+      <div class="step-head" style="--accent: linear-gradient(135deg, #2563EB, #1E40AF);">
+        <div class="step-badge">2</div>
+        <div class="step-emoji">🔍</div>
+        <div class="step-name">
+          <div class="step-name-title">카메라 IP 자동 발견</div>
+          <div class="step-name-subtitle">tcpdump으로 카메라가 보내는 신호를 엿듣기</div>
+        </div>
+      </div>
+
+      <div class="step-body">
+
+        <div class="why-box">
+          <div class="why-title">🤔 왜 이 단계가 필요한가요?</div>
+          <div class="why-content">
+            카메라 IP를 모르면 카메라와 대화할 수 없습니다. 일반 IP 스캐너는 "같은 대역의 IP"만 찾을 수 있어서,
+            카메라가 우리 NUC과 다른 대역(예: 192.168.1.123 vs 192.168.0.x)이면 발견하지 못합니다.
+            <strong>tcpdump</strong>은 다릅니다 — 인터페이스를 지나가는 <strong>모든 패킷을 가로채서 읽을 수 있어요.</strong>
+            카메라가 부팅하면서 자기 IP를 외치는 신호(ARP/DHCP)를 엿듣고 IP를 알아냅니다.
+          </div>
+        </div>
+
+        <div class="analogy-box">
+          <div class="analogy-icon">📻</div>
+          <div>
+            <div class="analogy-title">쉽게 말하면</div>
+            <p class="analogy-text">파티에서 <strong>이름 모르는 사람</strong>의 이름을 알아내는 방법: 본인이 다른 사람에게 자기소개하는 순간을 옆에서 엿듣기. 카메라는 부팅하면서 "저는 IP 192.168.1.123이에요!"라고 자동으로 외칩니다.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-warning">
+          <span class="callout-icon">⚠️</span>
+          <div class="callout-content"><strong>사전 준비 (먼저 하세요):</strong><br>
+          ① 카메라 12V 어댑터를 카메라에 연결<br>
+          ② 랜선을 카메라 RJ45 ↔ NUC <code>eno1</code> 양쪽에 꽂기<br>
+          ③ 콘센트에 어댑터 꽂기 (전원 ON)<br>
+          ④ <strong>RJ45 LED 녹색이 깜빡이는지 확인</strong> (살아있다는 증거)</div>
+        </div>
+
+        <div class="cmd-box">
+          <button class="copy-btn" data-cmd="sudo tcpdump -i eno1 -n -e 'arp or (udp port 67 or udp port 68)'">📋 복사</button>
+          <div class="cmd-box-label">⌨️ 터미널에 입력 (eno1은 본인 인터페이스 이름)</div>
+          <code><span class="prompt">$</span>sudo tcpdump <span class="opt">-i</span> eno1 <span class="opt">-n</span> <span class="opt">-e</span> <span class="str">'arp or (udp port 67 or udp port 68)'</span></code>
+        </div>
+
+        <div class="cmd-breakdown">
+          <div class="cmd-breakdown-title">📖 명령어 분해 — 단어별 의미</div>
+          <table class="cmd-table">
+            <tr><td>sudo</td><td>"관리자 권한으로 실행"하는 명령. tcpdump은 네트워크 카드를 직접 읽어야 해서 권한이 필요합니다.</td></tr>
+            <tr><td>tcpdump</td><td>네트워크 패킷을 가로채서 보여주는 도구. "TCP를 떠넘긴다"의 줄임말이지만 모든 패킷을 봅니다.</td></tr>
+            <tr><td>-i eno1</td><td>"interface"의 약자. 어느 네트워크 포트에서 들을지 지정. 단계 1에서 확인한 이름 입력.</td></tr>
+            <tr><td>-n</td><td>"이름 변환을 하지 마라"는 옵션. IP를 도메인 이름으로 바꾸지 않고 그대로 보여줍니다 (더 빠름).</td></tr>
+            <tr><td>-e</td><td>"이더넷 헤더"도 보여달라는 옵션. MAC 주소까지 출력됩니다 (카메라 MAC을 알 수 있음).</td></tr>
+            <tr><td>'arp or...'</td><td>필터 표현식. "ARP 패킷이거나 DHCP 포트(67, 68) 패킷만" 보여달라는 의미. 카메라가 부팅 시 보내는 신호입니다.</td></tr>
+          </table>
+        </div>
+
+        <div class="callout callout-tip">
+          <span class="callout-icon">💡</span>
+          <div class="callout-content">
+            <strong>팁:</strong> 명령어 입력 후 잠시 기다려도 출력이 안 나오면 → <strong>카메라 전원을 잠시 끄고 다시 켜세요.</strong>
+            카메라가 부팅하면서 즉시 ARP/DHCP를 보내므로 그 순간을 잡을 수 있습니다.<br><br>
+            그리고 약 30초 후 <code>Ctrl+C</code>로 tcpdump을 중단하면 됩니다.
+          </div>
+        </div>
+
+        <div class="output-label">🖥️ 예상 출력 (한 줄이라도 나오면 성공)</div>
+        <div class="output-box">
+listening on eno1, link-type EN10MB (Ethernet), snapshot length 262144 bytes
+14:23:01.234567 <span class="key">f0:00:00:99:e0:85</span> > ff:ff:ff:ff:ff:ff, ARP,
+    Request who-has 192.168.1.1 tell <span class="ip">192.168.1.123</span>, length 46
+14:23:01.234890 <span class="key">f0:00:00:99:e0:85</span> > ff:ff:ff:ff:ff:ff, BOOTP/DHCP,
+    Request from <span class="key">f0:00:00:99:e0:85</span>, length 300
+^C
+2 packets captured</div>
+
+        <div class="interpret-box">
+          <div class="interpret-title">💡 출력을 읽는 법 — 한 줄씩 분석</div>
+          <ul class="interpret-list">
+            <li><strong>첫 줄(listening on...):</strong> tcpdump이 정상 시작했다는 안내. 무시.</li>
+            <li><strong>"f0:00:00:99:e0:85":</strong> 분홍색 부분 = <strong>카메라 MAC 주소</strong>. 메모해두세요.</li>
+            <li><strong>"tell 192.168.1.123":</strong> 노란색 부분 = <strong>카메라 IP 주소</strong>. ⭐ 핵심!</li>
+            <li><strong>"ARP, Request who-has X.X.X.X tell Y.Y.Y.Y":</strong> Y가 카메라 IP, X는 카메라가 찾는 게이트웨이.</li>
+            <li><strong>"BOOTP/DHCP, Request from MAC":</strong> 카메라가 라우터를 찾고 있다는 신호 (직결이라 응답은 없음).</li>
+          </ul>
+        </div>
+
+        <div class="result-branches">
+          <div class="branch branch-success">
+            <div class="branch-title">✅ 성공 (출력에 IP가 보임)</div>
+            <div class="branch-content">
+              메모하세요:<br>
+              ▸ 카메라 IP: __________________<br>
+              ▸ 카메라 MAC: __________________<br><br>
+              <strong>→ 단계 3으로 진행</strong>
+            </div>
+          </div>
+          <div class="branch branch-fail">
+            <div class="branch-title">❌ 실패 (아무 출력 없음)</div>
+            <div class="branch-content">
+              <strong>점검할 점:</strong>
+              <ul>
+                <li>RJ45 LED 녹색 깜빡임 확인</li>
+                <li>인터페이스 이름이 정확한지</li>
+                <li>카메라 전원 OFF→ON 후 재시도</li>
+                <li><code>sudo ip link set eno1 up</code> 시도</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+<!-- ====================================================== -->
+<!-- ============== 단계 3 — 현재 NUC IP 확인 ============== -->
+<!-- ====================================================== -->
+    <div class="step-card">
+      <div class="step-head" style="--accent: linear-gradient(135deg, #2563EB, #1E40AF);">
+        <div class="step-badge">3</div>
+        <div class="step-emoji">📍</div>
+        <div class="step-name">
+          <div class="step-name-title">현재 NUC IP 상태 확인</div>
+          <div class="step-name-subtitle">NUC이 지금 어떤 IP를 갖고 있는지 알아내기</div>
+        </div>
+      </div>
+
+      <div class="step-body">
+
+        <div class="why-box">
+          <div class="why-title">🤔 왜 이 단계가 필요한가요?</div>
+          <div class="why-content">
+            카메라와 통신하려면 NUC과 카메라가 <strong>"같은 동네(같은 IP 대역)"</strong>에 있어야 합니다.
+            카메라가 192.168.1.123에 살고 있다면, NUC도 192.168.1.X(예: 192.168.1.50)에 있어야 통신이 가능해요.
+            이 단계는 NUC의 현재 IP가 어떤지 확인하여 <strong>"이미 같은 대역인지, 아니면 변경이 필요한지"</strong>를 판단하기 위함입니다.
+            대부분의 경우 NUC의 이더넷 포트는 IP가 없거나 다른 대역이므로 다음 단계(4)가 필요합니다.
+          </div>
+        </div>
+
+        <div class="cmd-box">
+          <button class="copy-btn" data-cmd="ip addr show eno1">📋 복사</button>
+          <div class="cmd-box-label">⌨️ 터미널에 입력 (eno1은 본인 인터페이스)</div>
+          <code><span class="prompt">$</span>ip addr show eno1</code>
+        </div>
+
+        <div class="cmd-breakdown">
+          <div class="cmd-breakdown-title">📖 명령어 분해 — 단어별 의미</div>
+          <table class="cmd-table">
+            <tr><td>ip</td><td>리눅스의 강력한 네트워크 관리 명령어. IP 주소, 라우팅, 인터페이스 등 모든 네트워크 작업의 기본.</td></tr>
+            <tr><td>addr</td><td>"address"의 줄임. "주소 관련 작업을 하겠다"는 의미.</td></tr>
+            <tr><td>show</td><td>"보여달라"는 의미. (다른 옵션: add는 추가, del은 삭제)</td></tr>
+            <tr><td>eno1</td><td>어느 인터페이스의 정보를 보여줄지 지정. (생략하면 모든 인터페이스 표시)</td></tr>
+          </table>
+        </div>
+
+        <div class="output-label">🖥️ 예상 출력 (3가지 케이스)</div>
+
+        <p class="body-text" style="margin-top: 0.5rem;"><strong>케이스 A: IP가 없음 (가장 흔함)</strong></p>
+        <div class="output-box">
+2: eno1: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500
+    link/ether 1c:69:7a:6f:45:01 brd ff:ff:ff:ff:ff:ff
+    <span class="comment"># inet 줄이 없음 → IP가 안 설정된 상태</span></div>
+
+        <p class="body-text"><strong>케이스 B: 다른 대역 IP가 있음</strong></p>
+        <div class="output-box">
+2: eno1: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500
+    link/ether 1c:69:7a:6f:45:01 brd ff:ff:ff:ff:ff:ff
+    <span class="err">inet 192.168.50.100/24</span> brd 192.168.50.255 scope global eno1
+    <span class="comment"># 카메라는 192.168.1.123인데 NUC은 192.168.50.x → 다른 대역</span></div>
+
+        <p class="body-text"><strong>케이스 C: 이미 같은 대역</strong></p>
+        <div class="output-box">
+2: eno1: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500
+    link/ether 1c:69:7a:6f:45:01 brd ff:ff:ff:ff:ff:ff
+    <span class="ok">inet 192.168.1.50/24</span> brd 192.168.1.255 scope global eno1
+    <span class="comment"># 카메라(192.168.1.123)와 같은 대역 → 단계 4 건너뛰고 7로</span></div>
+
+        <div class="interpret-box">
+          <div class="interpret-title">💡 출력을 읽는 법</div>
+          <ul class="interpret-list">
+            <li><strong>"inet" 줄</strong>이 있으면 → IP가 설정되어 있음</li>
+            <li><strong>"inet" 줄</strong>이 없으면 → IP가 없는 상태 (단계 4에서 설정해야 함)</li>
+            <li>"inet X.X.X.X/24"에서 <strong>앞 3자리(X.X.X)가 카메라와 같아야</strong> 통신 가능</li>
+            <li>"/24"는 서브넷 마스크 = 같은 동네의 범위 (1~254번 집까지 같은 동네)</li>
+          </ul>
+        </div>
+
+        <div class="analogy-box">
+          <div class="analogy-icon">🏘️</div>
+          <div>
+            <div class="analogy-title">쉽게 말하면</div>
+            <p class="analogy-text">"192.168.1.123"이 카메라 집 주소라면 "192.168.1.x"는 <strong>같은 동네</strong>입니다. 카메라와 같은 동네에 있어야 직접 대화할 수 있어요. 다른 동네면 우체국(라우터)을 통해야 하는데, 직결에는 우체국이 없습니다.</p>
+          </div>
+        </div>
+
+        <div class="result-branches">
+          <div class="branch branch-success">
+            <div class="branch-title">✅ 케이스 C: 이미 같은 대역</div>
+            <div class="branch-content">
+              운이 좋습니다! 단계 4, 5, 6 모두 건너뛰고<br>
+              <strong>→ 단계 7 (ping 확인)로 직행</strong>
+            </div>
+          </div>
+          <div class="branch branch-fail">
+            <div class="branch-title">⚠️ 케이스 A/B: IP 없거나 다른 대역</div>
+            <div class="branch-content">
+              대부분의 경우 여기 해당.<br>
+              <strong>→ 단계 4로 진행해서 NUC IP 변경 필요</strong>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ====================================================== -->
+<!-- ============== 단계 4 — NetworkManager IP 설정 ============== -->
+<!-- ====================================================== -->
+<section style="background: var(--color-card);">
+  <div class="container">
+
+    <div class="step-card">
+      <div class="step-head" style="--accent: linear-gradient(135deg, #7C3AED, #5B21B6);">
+        <div class="step-badge">4</div>
+        <div class="step-emoji">⚙️</div>
+        <div class="step-name">
+          <div class="step-name-title">NetworkManager 영구 고정 IP 설정</div>
+          <div class="step-name-subtitle">⭐ 가장 중요한 단계 — 재부팅에도 유지되는 설정</div>
+        </div>
+      </div>
+
+      <div class="step-body">
+
+        <div class="why-box">
+          <div class="why-title">🤔 왜 이 단계가 가장 중요한가요?</div>
+          <div class="why-content">
+            NUC의 IP를 카메라와 같은 대역(예: 192.168.1.50)으로 바꿔야 통신할 수 있어요.
+            하지만 그냥 IP를 추가하면 <strong>NetworkManager가 곧 덮어씁니다</strong>(특히 재부팅 시).
+            그래서 우리는 NetworkManager 자체에 "이 인터페이스는 항상 192.168.1.50을 사용해라"를
+            <strong>영구 등록</strong>합니다. 한 번 등록하면 재부팅 후에도 자동으로 적용됩니다.
+          </div>
+        </div>
+
+        <div class="callout callout-warning">
+          <span class="callout-icon">⚠️</span>
+          <div class="callout-content">
+            <strong>흔히 하는 실수:</strong> <code>sudo ip addr add 192.168.1.50/24 dev eno1</code><br>
+            이 명령어는 즉시 작동하지만 <strong>NetworkManager가 곧 덮어씁니다.</strong>
+            재부팅하면 사라져요. 그래서 우리는 <code>nmcli connection modify</code>를 씁니다.
+          </div>
+        </div>
+
+        <div class="cmd-box">
+          <button class="copy-btn" data-cmd='sudo nmcli connection modify "유선 연결 1" ipv4.method manual ipv4.addresses 192.168.1.50/24 ipv4.gateway "" ipv4.dns ""'>📋 복사</button>
+          <div class="cmd-box-label">⌨️ 터미널에 입력 (한 줄로 길게)</div>
+          <code><span class="prompt">$</span>sudo nmcli connection modify <span class="str">"유선 연결 1"</span> \
+    <span class="opt">ipv4.method</span> manual \
+    <span class="opt">ipv4.addresses</span> 192.168.1.50/24 \
+    <span class="opt">ipv4.gateway</span> <span class="str">""</span> \
+    <span class="opt">ipv4.dns</span> <span class="str">""</span></code>
+        </div>
+
+        <div class="callout callout-info">
+          <span class="callout-icon">💡</span>
+          <div class="callout-content">
+            <strong>한 줄 vs 여러 줄:</strong> 위 명령어는 <code>\</code>(역슬래시)로 줄을 이어붙인 형태입니다.
+            실제로는 모두 한 명령어예요. 복사하면 자동으로 한 줄로 됩니다. 직접 입력할 때는 <code>\</code> 다음에 <kbd>Enter</kbd>를 누르면 됩니다.
+          </div>
+        </div>
+
+        <div class="cmd-breakdown">
+          <div class="cmd-breakdown-title">📖 명령어 분해 — 단어별 의미</div>
+          <table class="cmd-table">
+            <tr><td>nmcli connection modify</td><td>"NetworkManager의 연결 프로필을 수정하겠다"는 의미. 단순히 IP를 임시로 바꾸는 게 아니라 NetworkManager 데이터베이스를 영구 변경.</td></tr>
+            <tr><td>"유선 연결 1"</td><td>수정할 프로필의 이름. 단계 1의 출력에서 <strong>CONNECTION 컬럼</strong>에 있던 이름. 한글 그대로 입력하되 반드시 따옴표로 감쌉니다.</td></tr>
+            <tr><td>ipv4.method manual</td><td>"IP를 자동(DHCP)이 아닌 수동으로 설정하겠다"는 의미. <code>auto</code>면 DHCP, <code>manual</code>이면 직접 지정.</td></tr>
+            <tr><td>ipv4.addresses 192.168.1.50/24</td><td>NUC이 가질 IP 주소. <code>/24</code>는 서브넷 마스크 = "같은 대역의 범위는 1~254번까지".</td></tr>
+            <tr><td>ipv4.gateway ""</td><td>게이트웨이 = "외부로 나갈 때 거치는 라우터". 직결이라 라우터가 없으니 <strong>빈 문자열</strong>로 둡니다. 인터넷은 WiFi가 담당.</td></tr>
+            <tr><td>ipv4.dns ""</td><td>DNS 서버 = "도메인을 IP로 변환해주는 서버". 직결이라 DNS도 빈 값. 인터넷은 WiFi가 담당.</td></tr>
+          </table>
+        </div>
+
+        <div class="output-label">🖥️ 예상 출력 (성공)</div>
+        <div class="output-box">
+<span class="comment"># 출력이 거의 없음 — 무소식이 희소식</span>
+<span class="ok"># (명령이 성공하면 그냥 다음 프롬프트로 돌아옴)</span></div>
+
+        <div class="output-label">🖥️ 예상 출력 (실패 — 프로필 이름 오류)</div>
+        <div class="output-box">
+<span class="err">Error: unknown connection '유선 연결1'.</span>
+<span class="comment"># 프로필 이름에 공백 누락 → "유선 연결 1"로 정확히</span></div>
+
+        <div class="interpret-box">
+          <div class="interpret-title">💡 출력을 읽는 법</div>
+          <ul class="interpret-list">
+            <li><strong>아무 출력이 없으면</strong> → 성공 (유닉스 철학: 성공은 조용히)</li>
+            <li><strong>"Error: unknown connection"</strong> → 프로필 이름이 정확하지 않음. 단계 1 출력의 CONNECTION 컬럼 다시 확인</li>
+            <li><strong>"Error: invalid IPv4 address"</strong> → IP 형식 오류. <code>192.168.1.50/24</code>처럼 슬래시까지 정확히</li>
+            <li>이 단계는 아직 "적용"이 안 된 상태. 실제 활성화는 단계 5에서</li>
+          </ul>
+        </div>
+
+        <div class="analogy-box">
+          <div class="analogy-icon">📋</div>
+          <div>
+            <div class="analogy-title">쉽게 말하면</div>
+            <p class="analogy-text">"<strong>이력서 수정</strong>"입니다. NetworkManager의 이력서에 "내 IP는 영구히 192.168.1.50이다"라고 적어두는 거예요. 다음 단계에서 이 이력서를 제출(적용)하면 시스템이 실제로 IP를 변경합니다.</p>
+          </div>
+        </div>
+
+        <div class="next-step">
+          <div class="next-step-text">
+            ✅ 에러 메시지 없이 명령어가 끝났나요? &nbsp;<strong>→ 단계 5로 이동</strong>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+
+<!-- ====================================================== -->
+<!-- ============== 단계 5 — 설정 적용 (down/up) ============== -->
+<!-- ====================================================== -->
+    <div class="step-card">
+      <div class="step-head" style="--accent: linear-gradient(135deg, #7C3AED, #5B21B6);">
+        <div class="step-badge">5</div>
+        <div class="step-emoji">🔄</div>
+        <div class="step-name">
+          <div class="step-name-title">변경 설정 적용 (재연결)</div>
+          <div class="step-name-subtitle">단계 4의 수정을 실제로 활성화</div>
+        </div>
+      </div>
+
+      <div class="step-body">
+
+        <div class="why-box">
+          <div class="why-title">🤔 왜 두 번 명령어를 입력하나요?</div>
+          <div class="why-content">
+            단계 4에서는 NetworkManager의 "설정 파일"만 바꿨습니다. 실제 IP는 아직 적용되지 않은 상태예요.
+            적용하려면 <strong>연결을 한 번 끊고(down) 다시 연결(up)</strong>해야 합니다.
+            새 설정을 메모리에 다시 읽어들이기 위함입니다.
+            (재부팅하지 않고도 새 설정을 즉시 적용하는 방법)
+          </div>
+        </div>
+
+        <p class="body-text" style="font-weight: 700; margin-top: 1.5rem;">▶ 첫 번째 명령어 — 연결 끊기</p>
+
+        <div class="cmd-box">
+          <button class="copy-btn" data-cmd='sudo nmcli connection down "유선 연결 1"'>📋 복사</button>
+          <div class="cmd-box-label">⌨️ 터미널에 입력</div>
+          <code><span class="prompt">$</span>sudo nmcli connection down <span class="str">"유선 연결 1"</span></code>
+        </div>
+
+        <div class="cmd-breakdown">
+          <div class="cmd-breakdown-title">📖 명령어 분해</div>
+          <table class="cmd-table">
+            <tr><td>nmcli connection down</td><td>"이 연결을 비활성화하라"는 의미. 케이블은 그대로지만 NetworkManager는 더 이상 이 인터페이스를 관리하지 않음.</td></tr>
+            <tr><td>"유선 연결 1"</td><td>비활성화할 프로필 이름 (단계 4와 동일).</td></tr>
+          </table>
+        </div>
+
+        <div class="output-label">🖥️ 예상 출력</div>
+        <div class="output-box">
+<span class="ok">Connection '유선 연결 1' successfully deactivated</span>
+<span class="comment"># 또는 다음 메시지도 정상:</span>
+<span class="comment"># Error: 'connection' is not active.</span>
+<span class="comment"># (이미 비활성 상태였을 뿐, 진행에 문제 없음)</span></div>
+
+        <p class="body-text" style="font-weight: 700; margin-top: 1.75rem;">▶ 두 번째 명령어 — 연결 켜기 (1초 정도 대기 후)</p>
+
+        <div class="cmd-box">
+          <button class="copy-btn" data-cmd='sudo nmcli connection up "유선 연결 1"'>📋 복사</button>
+          <div class="cmd-box-label">⌨️ 터미널에 입력</div>
+          <code><span class="prompt">$</span>sudo nmcli connection up <span class="str">"유선 연결 1"</span></code>
+        </div>
+
+        <div class="cmd-breakdown">
+          <div class="cmd-breakdown-title">📖 명령어 분해</div>
+          <table class="cmd-table">
+            <tr><td>nmcli connection up</td><td>"이 연결을 활성화하라"는 의미. 단계 4에서 수정한 새 설정으로 인터페이스를 켭니다.</td></tr>
+          </table>
+        </div>
+
+        <div class="output-label">🖥️ 예상 출력 (성공)</div>
+        <div class="output-box">
+<span class="ok">Connection successfully activated</span>
+(D-Bus active path: /org/freedesktop/NetworkManager/ActiveConnection/N)
+<span class="comment"># 이 한 줄 = "이제 192.168.1.50/24가 eno1에 적용됐다"는 의미</span></div>
+
+        <div class="output-label">🖥️ 예상 출력 (실패)</div>
+        <div class="output-box">
+<span class="err">Error: Connection activation failed: No suitable device found</span>
+<span class="comment"># 원인: 케이블 미연결 or 다른 프로필이 이미 사용 중</span></div>
+
+        <div class="interpret-box">
+          <div class="interpret-title">💡 두 번째 명령어가 중요</div>
+          <ul class="interpret-list">
+            <li><strong>"successfully activated"</strong> → 새 설정 적용 완료 ✅</li>
+            <li><strong>"activation failed"</strong> → 케이블 또는 프로필 문제. 단계 4 다시 확인</li>
+            <li>첫 번째 "down" 명령어의 "is not active" 메시지는 무시해도 됨 (이미 꺼져있던 것뿐)</li>
+            <li>두 명령어 사이에 1초 정도 기다리면 안정적 (시스템에 여유)</li>
+          </ul>
+        </div>
+
+        <div class="analogy-box">
+          <div class="analogy-icon">🔌</div>
+          <div>
+            <div class="analogy-title">쉽게 말하면</div>
+            <p class="analogy-text">"<strong>리부팅 없이 변경사항을 반영하는 방법</strong>"입니다. PC를 재부팅하지 않고도 네트워크 카드만 잠시 끄고(down) 다시 켜서(up) 새 설정을 읽어들이는 거예요. 마치 라디오를 잠깐 껐다가 다시 켜서 새 채널로 맞추는 것과 같습니다.</p>
+          </div>
+        </div>
+
+        <div class="next-step">
+          <div class="next-step-text">
+            ✅ "successfully activated" 메시지 확인하셨나요? &nbsp;<strong>→ 단계 6에서 진짜 적용됐는지 확인</strong>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+<!-- ====================================================== -->
+<!-- ============== 단계 6 — IP 적용 확인 ============== -->
+<!-- ====================================================== -->
+    <div class="step-card">
+      <div class="step-head" style="--accent: linear-gradient(135deg, #7C3AED, #5B21B6);">
+        <div class="step-badge">6</div>
+        <div class="step-emoji">✓</div>
+        <div class="step-name">
+          <div class="step-name-title">IP 적용 결과 확인</div>
+          <div class="step-name-subtitle">설정한 IP가 진짜로 들어갔는지 검증</div>
+        </div>
+      </div>
+
+      <div class="step-body">
+
+        <div class="why-box">
+          <div class="why-title">🤔 왜 또 확인하나요?</div>
+          <div class="why-content">
+            단계 5의 "activated" 메시지가 나왔어도 실제 IP가 정확히 적용됐는지는 별개의 확인이 필요합니다.
+            <strong>"내가 시킨 대로 됐는가"</strong>를 두 번 검증하는 것이 안전합니다.
+            특히 NetworkManager는 가끔 DHCP를 우선시하거나, 다른 설정이 충돌해서 우리가 원한 IP가 안 들어갈 수 있어요.
+          </div>
+        </div>
+
+        <div class="cmd-box">
+          <button class="copy-btn" data-cmd="ip addr show eno1 | grep 'inet '">📋 복사</button>
+          <div class="cmd-box-label">⌨️ 터미널에 입력</div>
+          <code><span class="prompt">$</span>ip addr show eno1 <span class="opt">|</span> grep <span class="str">'inet '</span></code>
+        </div>
+
+        <div class="cmd-breakdown">
+          <div class="cmd-breakdown-title">📖 명령어 분해 — 새 개념 등장</div>
+          <table class="cmd-table">
+            <tr><td>ip addr show eno1</td><td>단계 3과 동일 — eno1의 모든 정보 출력.</td></tr>
+            <tr><td>|</td><td>"파이프(pipe)" 기호. 앞 명령의 출력을 뒤 명령의 입력으로 넘기는 리눅스의 강력한 기능.</td></tr>
+            <tr><td>grep 'inet '</td><td>"inet "이라는 글자가 포함된 줄만 골라서 보여달라는 의미. 'inet '의 공백 한 칸이 중요(IPv6는 'inet6'이라 제외하기 위함).</td></tr>
+          </table>
+        </div>
+
+        <div class="output-label">🖥️ 예상 출력 (성공)</div>
+        <div class="output-box">
+    <span class="ok">inet 192.168.1.50/24</span> brd 192.168.1.255 scope global noprefixroute eno1</div>
+
+        <div class="output-label">🖥️ 예상 출력 (실패 — IP 없음)</div>
+        <div class="output-box">
+<span class="comment"># 아무 출력이 없으면 → IP 적용 실패</span>
+<span class="comment"># 또는 다른 IP가 보이면 → 다른 설정이 충돌</span></div>
+
+        <div class="interpret-box">
+          <div class="interpret-title">💡 출력을 읽는 법 — 한 단어씩 분석</div>
+          <ul class="interpret-list">
+            <li><strong>"inet 192.168.1.50/24"</strong>: IPv4 주소 + 서브넷 마스크. 우리가 원한 IP ✅</li>
+            <li><strong>"brd 192.168.1.255"</strong>: broadcast 주소. /24 대역의 마지막 IP (자동 계산됨)</li>
+            <li><strong>"scope global"</strong>: 이 IP가 외부 통신에도 사용 가능하다는 의미</li>
+            <li><strong>"noprefixroute"</strong>: 다른 라우팅을 자동으로 안 만든다는 의미. 직결에 적합</li>
+            <li><strong>맨 끝 "eno1"</strong>: 이 IP가 속한 인터페이스 이름</li>
+          </ul>
+        </div>
+
+        <div class="result-branches">
+          <div class="branch branch-success">
+            <div class="branch-title">✅ 성공: 192.168.1.50/24 표시</div>
+            <div class="branch-content">
+              완벽합니다! 이제 NUC ↔ 카메라가 같은 대역.<br>
+              <strong>→ 단계 7로 진행해서 실제 통신 확인</strong>
+            </div>
+          </div>
+          <div class="branch branch-fail">
+            <div class="branch-title">❌ 실패: 출력 없음 또는 다른 IP</div>
+            <div class="branch-content">
+              <strong>점검 사항:</strong>
+              <ul>
+                <li>단계 4의 IP 정확성</li>
+                <li>단계 5의 "activated" 성공 여부</li>
+                <li>케이블 연결 상태</li>
+                <li>단계 4부터 재실행</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ====================================================== -->
+<!-- ============== 단계 7 — ping 통신 확인 ============== -->
+<!-- ====================================================== -->
+<section>
+  <div class="container">
+
+    <div class="step-card">
+      <div class="step-head" style="--accent: linear-gradient(135deg, #D97706, #B45309);">
+        <div class="step-badge">7</div>
+        <div class="step-emoji">📡</div>
+        <div class="step-name">
+          <div class="step-name-title">카메라 ping 통신 확인</div>
+          <div class="step-name-subtitle">NUC ↔ 카메라가 실제로 대화 가능한지 검증</div>
+        </div>
+      </div>
+
+      <div class="step-body">
+
+        <div class="why-box">
+          <div class="why-title">🤔 왜 ping이 중요한가요?</div>
+          <div class="why-content">
+            ping은 네트워크 통신의 <strong>가장 기본적인 테스트</strong>입니다.
+            "잘 들리니?"라고 메아리 신호를 보내고 카메라가 "응 들려"라고 답하는지 확인하는 것이죠.
+            ping이 안 되면 그 위에 어떤 것(웹, RTSP)도 안 됩니다.
+            반대로 ping이 되면 모든 가능성이 열려요.
+          </div>
+        </div>
+
+        <div class="cmd-box">
+          <button class="copy-btn" data-cmd="ping -c 5 192.168.1.123">📋 복사</button>
+          <div class="cmd-box-label">⌨️ 터미널에 입력</div>
+          <code><span class="prompt">$</span>ping <span class="opt">-c</span> 5 192.168.1.123</code>
+        </div>
+
+        <div class="cmd-breakdown">
+          <div class="cmd-breakdown-title">📖 명령어 분해</div>
+          <table class="cmd-table">
+            <tr><td>ping</td><td>"Packet Internet Groper"의 약자. 작은 신호 패킷을 보내고 응답을 측정하는 도구. 잠수함 소나에서 유래.</td></tr>
+            <tr><td>-c 5</td><td>"count의 약자, 5번만 보내고 종료". 안 쓰면 무한 반복(Ctrl+C 필요).</td></tr>
+            <tr><td>192.168.1.123</td><td>대상 IP — 단계 2에서 발견한 카메라 IP.</td></tr>
+          </table>
+        </div>
+
+        <div class="output-label">🖥️ 예상 출력 (정상 — 통신 성공)</div>
+        <div class="output-box">
+PING 192.168.1.123 (192.168.1.123) 56(84) bytes of data.
+64 bytes from <span class="ip">192.168.1.123</span>: icmp_seq=1 ttl=64 <span class="ok">time=0.5 ms</span>
+64 bytes from <span class="ip">192.168.1.123</span>: icmp_seq=2 ttl=64 <span class="ok">time=0.4 ms</span>
+64 bytes from <span class="ip">192.168.1.123</span>: icmp_seq=3 ttl=64 <span class="ok">time=0.5 ms</span>
+64 bytes from <span class="ip">192.168.1.123</span>: icmp_seq=4 ttl=64 <span class="ok">time=0.4 ms</span>
+64 bytes from <span class="ip">192.168.1.123</span>: icmp_seq=5 ttl=64 <span class="ok">time=0.5 ms</span>
+
+--- 192.168.1.123 ping statistics ---
+<span class="ok">5 packets transmitted, 5 received, 0% packet loss</span>, time 4081ms
+rtt min/avg/max/mdev = 0.4/0.5/0.5/0.05 ms</div>
+
+        <div class="output-label">🖥️ 예상 출력 (실패 — 통신 불가)</div>
+        <div class="output-box">
+PING 192.168.1.123 (192.168.1.123) 56(84) bytes of data.
+<span class="err">From 192.168.1.50 icmp_seq=1 Destination Host Unreachable</span>
+<span class="err">From 192.168.1.50 icmp_seq=2 Destination Host Unreachable</span>
+<span class="comment"># 또는 모두 시간 초과:</span>
+<span class="err">5 packets transmitted, 0 received, 100% packet loss</span></div>
+
+        <div class="interpret-box">
+          <div class="interpret-title">💡 출력을 읽는 법 — 핵심 지표</div>
+          <ul class="interpret-list">
+            <li><strong>"64 bytes from X.X.X.X"</strong> 줄: 카메라가 응답함 (✅ 정상)</li>
+            <li><strong>"time=X.X ms"</strong>: 응답 시간. 직결이라 0.5ms 이하가 정상. 1초 이상이면 문제 있음</li>
+            <li><strong>"5 received, 0% packet loss"</strong>: 100% 응답 = 완벽한 통신 ✅</li>
+            <li><strong>"Destination Host Unreachable"</strong>: 카메라까지 도달 못 함 (단계 4~6 다시)</li>
+            <li><strong>"100% packet loss"</strong>: 카메라가 응답 안 함 (카메라 전원 또는 IP 확인)</li>
+            <li><strong>"ttl=64"</strong>: Time To Live. 패킷이 거쳐갈 수 있는 라우터 수. 직결이라 그대로 64</li>
+          </ul>
+        </div>
+
+        <div class="analogy-box">
+          <div class="analogy-icon">📞</div>
+          <div>
+            <div class="analogy-title">쉽게 말하면</div>
+            <p class="analogy-text">"<strong>전화 한 번 걸어보기</strong>"입니다. 카메라에게 5번 전화를 걸고 5번 다 "여보세요" 응답이 오면 통신 성공. 만약 통화가 안 되면 위의 모든 설정이 무의미해요. 그래서 RTSP 영상 단계로 가기 전에 반드시 ping부터 확인합니다.</p>
+          </div>
+        </div>
+
+        <div class="result-branches">
+          <div class="branch branch-success">
+            <div class="branch-title">✅ 5번 모두 응답 (0% loss)</div>
+            <div class="branch-content">
+              네트워크 통신 완벽!<br>
+              <strong>→ 단계 8 RTSP URL 검증으로 진행</strong>
+            </div>
+          </div>
+          <div class="branch branch-fail">
+            <div class="branch-title">❌ 응답 없음</div>
+            <div class="branch-content">
+              <strong>점검 순서:</strong>
+              <ul>
+                <li>케이블 연결 + LED</li>
+                <li>단계 6 IP 확인</li>
+                <li>카메라 IP가 정확한지 (단계 2 재실행)</li>
+                <li>NUC 방화벽 (보통 문제 없음)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+<!-- ====================================================== -->
+<!-- ============== 단계 8 — RTSP URL 검증 ============== -->
+<!-- ====================================================== -->
+    <div class="step-card">
+      <div class="step-head" style="--accent: linear-gradient(135deg, #D97706, #B45309);">
+        <div class="step-badge">8</div>
+        <div class="step-emoji">🎬</div>
+        <div class="step-name">
+          <div class="step-name-title">RTSP URL 검증</div>
+          <div class="step-name-subtitle">카메라가 어떤 영상 주소를 지원하는지 확인</div>
+        </div>
+      </div>
+
+      <div class="step-body">
+
+        <div class="why-box">
+          <div class="why-title">🤔 왜 URL을 여러 개 시도하나요?</div>
+          <div class="why-content">
+            카메라마다 영상을 받을 수 있는 RTSP URL 형식이 다릅니다. 표준이 명확하지 않아서
+            제조사마다 자기 방식을 씁니다. Hikvision은 <code>/Streaming/Channels/101</code>,
+            anjvision은 <code>/stream1</code>, 일부 구형은 <code>/h264/ch1/main/av_stream</code> 등.
+            중국 OEM 카메라(예: 빅맥님 카메라)는 두 가지 패턴 모두 지원하기도 합니다.
+            <strong>어떤 URL이 작동하는지 ffprobe로 미리 확인</strong>하는 것이 안전합니다.
+          </div>
+        </div>
+
+        <p class="body-text">먼저 ffmpeg(ffprobe 포함) 설치 확인:</p>
+
+        <div class="cmd-box">
+          <button class="copy-btn" data-cmd="ffprobe -version">📋 복사</button>
+          <div class="cmd-box-label">⌨️ 설치 확인</div>
+          <code><span class="prompt">$</span>ffprobe -version</code>
+        </div>
+
+        <p class="body-text"><strong>설치 안 되어 있다면:</strong></p>
+        <div class="cmd-box">
+          <button class="copy-btn" data-cmd="sudo apt install ffmpeg -y">📋 복사</button>
+          <div class="cmd-box-label">⌨️ ffmpeg 설치 (ffplay와 ffprobe 포함)</div>
+          <code><span class="prompt">$</span>sudo apt install ffmpeg <span class="opt">-y</span></code>
+        </div>
+
+        <p class="body-text" style="font-weight: 700; margin-top: 1.5rem;">▶ 가장 흔한 URL 먼저 시도 (Hikvision 호환 메인 스트림)</p>
+
+        <div class="cmd-box">
+          <button class="copy-btn" data-cmd="ffprobe -rtsp_transport tcp rtsp://admin:123456@192.168.1.123:554/Streaming/Channels/101">📋 복사</button>
+          <div class="cmd-box-label">⌨️ ffprobe로 URL 검증 (영상은 안 띄움, 정보만)</div>
+          <code><span class="prompt">$</span>ffprobe <span class="opt">-rtsp_transport</span> tcp \
+    <span class="str">rtsp://admin:123456@192.168.1.123:554/Streaming/Channels/101</span></code>
+        </div>
+
+        <div class="cmd-breakdown">
+          <div class="cmd-breakdown-title">📖 명령어 분해 — RTSP URL 구조</div>
+          <table class="cmd-table">
+            <tr><td>ffprobe</td><td>"파일이나 스트림의 정보를 분석"하는 도구. 영상은 안 띄우고 정보만 출력. 검증용으로 가벼움.</td></tr>
+            <tr><td>-rtsp_transport tcp</td><td>RTSP를 TCP로 받으라는 의미. UDP는 패킷 손실로 영상 끊김. TCP가 안정적 (살짝 느림).</td></tr>
+            <tr><td>rtsp://</td><td>프로토콜. "RTSP 방식으로 받겠다"는 의미.</td></tr>
+            <tr><td>admin:123456@</td><td>사용자명:비밀번호. 카메라 웹 UI 로그인 정보와 동일. <code>@</code>는 "이 계정으로"의 의미.</td></tr>
+            <tr><td>192.168.1.123</td><td>카메라 IP (단계 2에서 발견).</td></tr>
+            <tr><td>:554</td><td>RTSP 표준 포트. 거의 모든 카메라가 이 포트 사용.</td></tr>
+            <tr><td>/Streaming/Channels/101</td><td>경로. <code>101</code>=메인 스트림(1080p), <code>102</code>=서브 스트림(480p).</td></tr>
+          </table>
+        </div>
+
+        <div class="output-label">🖥️ 예상 출력 (성공)</div>
+        <div class="output-box">
+Input #0, rtsp, from 'rtsp://admin:***@192.168.1.123:554/Streaming/Channels/101':
+  Metadata:
+    title           : <span class="key">RTSP/RTP stream from anjvision ipcamera</span>
+  Duration: N/A, start: 0.000000, bitrate: N/A
+  Stream #0:0: Video: <span class="ok">h264 (High)</span>, yuv420p, <span class="ok">1920x1080</span>, <span class="ok">25 fps</span>, 25 tbr
+  Stream #0:1: Audio: pcm_mulaw, 8000 Hz, mono, s16, 64 kb/s</div>
+
+        <div class="output-label">🖥️ 예상 출력 (실패 — 401 인증 오류)</div>
+        <div class="output-box">
+[rtsp @ 0x7b360c000c80] <span class="err">method DESCRIBE failed: 401 Unauthorized</span>
+rtsp://admin:wrong@192.168.1.123:554/Streaming/Channels/101: <span class="err">Server returned 401</span>
+<span class="comment"># 원인: 비밀번호 오류 또는 사용자명 오류</span></div>
+
+        <div class="output-label">🖥️ 예상 출력 (실패 — URL 경로 오류)</div>
+        <div class="output-box">
+[rtsp @ 0x7b360c000c80] <span class="err">method DESCRIBE failed: 404 Stream Not Found</span>
+<span class="comment"># 원인: 이 카메라는 다른 URL 패턴 사용 → /stream1 시도</span></div>
+
+        <div class="interpret-box">
+          <div class="interpret-title">💡 출력을 읽는 법</div>
+          <ul class="interpret-list">
+            <li><strong>"Input #0, rtsp, from ..."</strong>: ffprobe가 성공적으로 연결됨</li>
+            <li><strong>"title: RTSP/RTP stream from ..."</strong>: 카메라 제조사 자기소개 (anjvision/Hikvision 등)</li>
+            <li><strong>"Video: h264, 1920x1080, 25 fps"</strong>: 영상 사양. 1080p 25프레임 = 좋은 화질</li>
+            <li><strong>"401 Unauthorized"</strong>: 비밀번호 틀림</li>
+            <li><strong>"404 Stream Not Found"</strong>: URL 경로 틀림 → 다른 패턴 시도</li>
+          </ul>
+        </div>
+
+        <div class="callout callout-tip">
+          <span class="callout-icon">🔄</span>
+          <div class="callout-content">
+            <strong>실패 시 시도해볼 다른 URL 패턴:</strong>
+            <ul style="margin-top: 0.5rem;">
+              <li><code>/Streaming/Channels/102</code> (서브 스트림 480p)</li>
+              <li><code>/stream1</code> (anjvision 자체 메인)</li>
+              <li><code>/stream2</code> (anjvision 자체 서브)</li>
+              <li><code>/h264/ch1/main/av_stream</code> (구형 Hikvision)</li>
+            </ul>
+            각 URL을 차례로 ffprobe로 검증하여 작동하는 것을 찾으세요.
+          </div>
+        </div>
+
+        <div class="next-step">
+          <div class="next-step-text">
+            ✅ "1920x1080" 같은 해상도 정보가 보였나요? &nbsp;<strong>→ 단계 9에서 실제로 영상 보기</strong>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+<!-- ====================================================== -->
+<!-- ============== 단계 9 — ffplay 영상 시청 ============== -->
+<!-- ====================================================== -->
+    <div class="step-card">
+      <div class="step-head" style="--accent: linear-gradient(135deg, #059669, #047857);">
+        <div class="step-badge">9</div>
+        <div class="step-emoji">📺</div>
+        <div class="step-name">
+          <div class="step-name-title">ffplay로 실시간 영상 시청</div>
+          <div class="step-name-subtitle">🎉 드디어 영상을 화면에 띄우는 단계</div>
+        </div>
+      </div>
+
+      <div class="step-body">
+
+        <div class="why-box">
+          <div class="why-title">🤔 마지막 단계 — 무엇을 하나요?</div>
+          <div class="why-content">
+            단계 8에서 검증한 RTSP URL을 <strong>ffplay</strong>로 열어 NUC 화면에 영상 창을 띄웁니다.
+            ffprobe는 정보만 알려주지만 ffplay는 실제로 영상을 디코딩해서 보여줍니다.
+            이 단계가 성공하면 셋업 완료 — 카메라에서 실시간 영상이 NUC으로 흐르고 있는 것이 확인됩니다.
+          </div>
+        </div>
+
+        <div class="cmd-box">
+          <button class="copy-btn" data-cmd="ffplay -rtsp_transport tcp -fflags nobuffer -flags low_delay -framedrop -an rtsp://admin:123456@192.168.1.123:554/Streaming/Channels/101">📋 복사</button>
+          <div class="cmd-box-label">⌨️ 영상 띄우기</div>
+          <code><span class="prompt">$</span>ffplay <span class="opt">-rtsp_transport</span> tcp \
+    <span class="opt">-fflags</span> nobuffer <span class="opt">-flags</span> low_delay <span class="opt">-framedrop</span> <span class="opt">-an</span> \
+    <span class="str">rtsp://admin:123456@192.168.1.123:554/Streaming/Channels/101</span></code>
+        </div>
+
+        <div class="cmd-breakdown">
+          <div class="cmd-breakdown-title">📖 명령어 분해 — 옵션별 의미</div>
+          <table class="cmd-table">
+            <tr><td>ffplay</td><td>"FFmpeg의 영상 플레이어". ffmpeg 패키지에 포함된 가벼운 비디오 플레이어. VLC보다 단순하지만 충분.</td></tr>
+            <tr><td>-rtsp_transport tcp</td><td>UDP 대신 TCP로 RTSP 받기. 끊김 없는 영상.</td></tr>
+            <tr><td>-fflags nobuffer</td><td>입력 버퍼링 끄기. 실시간성 ↑ (지연 감소).</td></tr>
+            <tr><td>-flags low_delay</td><td>디코더의 저지연 모드. CCTV/모니터링에 필수.</td></tr>
+            <tr><td>-framedrop</td><td>처리 못 따라잡으면 프레임을 떨어뜨림 (영상이 밀리지 않게).</td></tr>
+            <tr><td>-an</td><td>"audio no". 오디오 끄기. 모니터링은 보통 영상만 필요. 시끄러움 방지.</td></tr>
+          </table>
+        </div>
+
+        <div class="output-label">🖥️ 예상 출력 (콘솔)</div>
+        <div class="output-box">
+Input #0, rtsp, from '...':
+  Stream #0:0: Video: <span class="ok">h264 (High)</span>, yuv420p, <span class="ok">1920x1080</span>, 25 fps
+<span class="comment"># ↑ 그리고 별도 창이 뜨면서 실시간 영상 표시!</span>
+   2.34 A-V: 0.000 fd=   0 aq=    0KB vq=  256KB sq=    0B</div>
+
+        <div class="callout callout-tip">
+          <span class="callout-icon">🎬</span>
+          <div class="callout-content">
+            <strong>창 조작법:</strong><br>
+            • <kbd>Q</kbd> 또는 <kbd>ESC</kbd>: 종료<br>
+            • <kbd>F</kbd>: 전체 화면 전환<br>
+            • 마우스로 창 크기 조절 가능<br>
+            • 콘솔에서 <kbd>Ctrl</kbd> + <kbd>C</kbd>로도 종료 가능
+          </div>
+        </div>
+
+        <div class="interpret-box">
+          <div class="interpret-title">💡 영상이 잘 나오는지 체크</div>
+          <ul class="interpret-list">
+            <li><strong>창이 뜨고 영상이 부드럽게 재생됨</strong> → 셋업 완전 성공 🎉</li>
+            <li><strong>영상이 깜빡거리거나 끊김</strong> → <code>-rtsp_transport tcp</code>가 빠졌는지 확인</li>
+            <li><strong>창은 뜨는데 검은 화면</strong> → 카메라 렌즈 캡 또는 어두운 환경. 카메라를 밝은 곳으로</li>
+            <li><strong>"A-V: 0.000"</strong> 표시: 영상-오디오 동기화 시간. <code>-an</code> 덕분에 0.0</li>
+          </ul>
+        </div>
+
+        <div class="analogy-box">
+          <div class="analogy-icon">🎉</div>
+          <div>
+            <div class="analogy-title">완료를 축하합니다</div>
+            <p class="analogy-text">"<strong>유선 직결로 카메라 영상 시청</strong>" 9단계를 모두 마쳤습니다. 이제 같은 RTSP URL을 VLC, OpenCV, ffmpeg 녹화 등 다른 도구에도 그대로 사용할 수 있어요. 셋업 자체는 영구적이라 NUC을 재부팅해도 그대로 작동합니다.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============== 체크리스트 ============== -->
+<section style="background: var(--color-card);">
+  <div class="container">
+    <h2 class="section-title">실습 체크리스트</h2>
+    <p class="section-lead">각 단계 완료 시 체크하면서 진행하세요</p>
+
+    <div class="checklist">
+      <div class="checklist-title">✅ 9단계 진행 체크</div>
+      <div class="checklist-item"><div class="checklist-box"></div><div>1. <code>nmcli device status</code> → 이더넷 인터페이스 이름 확인 (예: eno1)</div></div>
+      <div class="checklist-item"><div class="checklist-box"></div><div>2. <code>sudo tcpdump -i eno1 ...</code> → 카메라 IP 발견 (예: 192.168.1.123)</div></div>
+      <div class="checklist-item"><div class="checklist-box"></div><div>3. <code>ip addr show eno1</code> → 현재 NUC IP 상태 파악</div></div>
+      <div class="checklist-item"><div class="checklist-box"></div><div>4. <code>sudo nmcli connection modify</code> → 영구 IP 설정 (192.168.1.50/24)</div></div>
+      <div class="checklist-item"><div class="checklist-box"></div><div>5. <code>nmcli connection down/up</code> → 설정 적용</div></div>
+      <div class="checklist-item"><div class="checklist-box"></div><div>6. <code>ip addr show eno1 | grep 'inet '</code> → IP 적용 확인</div></div>
+      <div class="checklist-item"><div class="checklist-box"></div><div>7. <code>ping -c 5 192.168.1.123</code> → 통신 확인 (5/5 응답)</div></div>
+      <div class="checklist-item"><div class="checklist-box"></div><div>8. <code>ffprobe ...</code> → RTSP URL 검증 (해상도 확인)</div></div>
+      <div class="checklist-item"><div class="checklist-box"></div><div>9. <code>ffplay ...</code> → 영상 시청 성공 🎉</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== 트러블슈팅 ============== -->
+<section>
+  <div class="container">
+    <h2 class="section-title">자주 막히는 부분 — 트러블슈팅</h2>
+    <p class="section-lead">단계별로 발생할 수 있는 문제와 해결법</p>
+
+    <table class="data-table">
+      <thead><tr><th>증상</th><th>가능한 원인</th><th>해결</th></tr></thead>
+      <tbody>
+        <tr><td>nmcli 결과에 eno1이 없음</td><td>다른 이더넷 이름 (eth0, enp3s0 등)</td><td>TYPE이 ethernet인 줄에서 DEVICE 이름 확인</td></tr>
+        <tr><td>tcpdump에 아무것도 안 나옴</td><td>카메라가 이미 부팅 완료 (브로드캐스트 끝남)</td><td>카메라 전원 OFF → 잠시 대기 → ON 후 재실행</td></tr>
+        <tr><td>tcpdump "permission denied"</td><td>sudo 누락</td><td>명령어 앞에 <code>sudo</code> 붙이기</td></tr>
+        <tr><td>nmcli modify "unknown connection"</td><td>프로필 이름 오타 또는 띄어쓰기</td><td>단계 1 출력의 CONNECTION 컬럼 정확히 복사, "유선 연결 1" (공백 한 칸)</td></tr>
+        <tr><td>nmcli up "activation failed"</td><td>케이블 미연결 또는 다른 충돌</td><td>RJ45 LED 확인, 케이블 다시 꽂기</td></tr>
+        <tr><td>단계 6에 IP가 안 보임</td><td>NetworkManager가 덮어씀</td><td>단계 4의 manual 설정 재확인, 단계 5 재실행</td></tr>
+        <tr><td>ping "Destination Host Unreachable"</td><td>NUC과 카메라가 다른 대역</td><td>단계 4의 IP가 카메라와 같은 대역인지 확인</td></tr>
+        <tr><td>ping 100% packet loss</td><td>카메라 전원/케이블 문제</td><td>RJ45 LED + 카메라 12V 어댑터 확인</td></tr>
+        <tr><td>ffprobe 401 Unauthorized</td><td>비밀번호 오류</td><td>브라우저로 http://192.168.1.123 로그인 시도해 정확한 비번 찾기</td></tr>
+        <tr><td>ffprobe 404 Stream Not Found</td><td>URL 경로가 이 카메라에 안 맞음</td><td>/stream1, /stream2, /Streaming/Channels/101 등 차례로 시도</td></tr>
+        <tr><td>ffplay 창이 떴다가 바로 닫힘</td><td>RTSP 인증 실패 또는 디코딩 실패</td><td>콘솔 에러 메시지 확인, ffprobe로 먼저 검증</td></tr>
+        <tr><td>영상이 끊겨서 나옴</td><td>UDP 사용 중</td><td><code>-rtsp_transport tcp</code> 옵션 확인</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============== 학습 정리 ============== -->
+<section style="background: var(--color-card);">
+  <div class="container">
+    <h2 class="section-title">🎓 이번 실습에서 배운 핵심 개념</h2>
+
+    <table class="data-table">
+      <thead><tr><th>개념</th><th>실제 사용된 곳</th></tr></thead>
+      <tbody>
+        <tr><td><strong>네트워크 인터페이스</strong></td><td>nmcli device status에서 본 eno1, wlp..., wlx...</td></tr>
+        <tr><td><strong>tcpdump 패킷 청취</strong></td><td>카메라 IP 자동 발견 (단계 2)</td></tr>
+        <tr><td><strong>ARP 프로토콜</strong></td><td>같은 망 안의 IP-MAC 매핑 (tcpdump 출력)</td></tr>
+        <tr><td><strong>NetworkManager 영구 설정</strong></td><td>재부팅에도 유지되는 IP (단계 4)</td></tr>
+        <tr><td><strong>서브넷 / 같은 대역</strong></td><td>192.168.1.x — 직접 통신 가능한 범위</td></tr>
+        <tr><td><strong>ping (ICMP)</strong></td><td>네트워크 통신 기본 검증 (단계 7)</td></tr>
+        <tr><td><strong>RTSP 프로토콜</strong></td><td>IP 카메라 영상 스트리밍 표준</td></tr>
+        <tr><td><strong>RTSP URL 구조</strong></td><td>rtsp://계정:비번@IP:포트/경로</td></tr>
+        <tr><td><strong>TCP vs UDP for RTSP</strong></td><td>TCP는 안정, UDP는 빠름 (CCTV는 TCP)</td></tr>
+        <tr><td><strong>ffprobe / ffplay</strong></td><td>영상 검증과 시청 도구</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-info" style="margin-top: 1.5rem;">
+      <span class="callout-icon">📚</span>
+      <div class="callout-content">
+        <strong>다음 학습 주제:</strong>
+        <ul style="margin-top: 0.4rem; margin-left: 1.2rem;">
+          <li>실습자료 2 (라우터 연결) — 다중 PC 접근</li>
+          <li>OpenCV로 RTSP 받아서 영상 처리</li>
+          <li>ffmpeg로 24/7 녹화 시스템</li>
+          <li>여러 카메라 통합 모니터링 (lekiwi_monitor_web.py)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== 푸터 ============== -->
+<footer style="background: linear-gradient(135deg, #0F172A, #1E3A8A); color: white; padding: 2.5rem 0; text-align: center;">
+  <div class="container">
+    <div style="font-weight: 700; font-size: 1.2rem; margin-bottom: 0.4rem;">📷 실습자료 1 V2 — IP 카메라 NUC 직접 연결</div>
+    <div style="font-size: 0.95rem; opacity: 0.85;">9단계 풀이형 학습 가이드 · 명령어를 직접 입력하면서 이해하는 방식</div>
+    <div style="font-size: 0.82rem; opacity: 0.6; margin-top: 0.85rem;">
+      빅맥 교육 자료 시리즈 · Physical AI 입문 과정 · 2026-06-15
+    </div>
+  </div>
+</footer>
+
+<!-- ============== 스크립트 (복사 버튼) ============== -->
+<script>
+  document.querySelectorAll('.copy-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var cmd = btn.getAttribute('data-cmd');
+      var done = function () {
+        var original = btn.innerHTML;
+        btn.innerHTML = '✅ 복사됨';
+        btn.classList.add('copied');
+        setTimeout(function () {
+          btn.innerHTML = original;
+          btn.classList.remove('copied');
+        }, 1500);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(cmd).then(done).catch(function () { fallbackCopy(cmd, done); });
+      } else {
+        fallbackCopy(cmd, done);
+      }
+    });
+  });
+  function fallbackCopy(text, done) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    done();
+  }
+</script>
+
+</body>
+</html>

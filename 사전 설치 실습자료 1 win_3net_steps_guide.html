@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>실습 가이드 윈도우 3개 무선망 단계별 설정</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --color-primary:#2563EB; --color-primary-light:#DBEAFE;
+  --color-secondary:#7C3AED; --color-secondary-light:#EDE9FE;
+  --color-success:#059669; --color-success-light:#D1FAE5;
+  --color-warning:#D97706; --color-warning-light:#FEF3C7;
+  --color-danger:#DC2626; --color-danger-light:#FEE2E2;
+  --color-surface:#F8FAFC; --color-card:#FFFFFF;
+  --color-text:#1E293B; --color-muted:#64748B; --color-border:#E2E8F0;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans KR',sans-serif;color:var(--color-text);background:var(--color-surface);line-height:1.75;}
+code,pre{font-family:'JetBrains Mono',monospace;}
+.container{max-width:900px;margin:0 auto;padding:0 1.5rem;}
+section{padding:3rem 0;}
+.section-title{font-size:1.85rem;font-weight:700;margin-bottom:0.5rem;}
+.section-lead{color:var(--color-muted);margin-bottom:2rem;}
+
+.hero{background:linear-gradient(135deg,#1E3A8A,#3B82F6);color:white;padding:3.5rem 0 3rem;}
+.hero h1{font-size:2.6rem;font-weight:900;line-height:1.2;}
+.hero-subtitle{font-size:1.1rem;margin-top:0.85rem;opacity:0.95;}
+.hero-tags{display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.25rem;}
+.pill{background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.35);padding:0.3rem 0.85rem;border-radius:999px;font-size:0.8rem;font-weight:500;}
+
+/* 3망 구성도 */
+.net-map{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:1rem;}
+.net-card{border-radius:14px;padding:1.4rem;color:white;position:relative;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,0.12);}
+.net-card.internet{background:linear-gradient(135deg,#059669,#10B981);}
+.net-card.robot{background:linear-gradient(135deg,#D97706,#F59E0B);}
+.net-card.video{background:linear-gradient(135deg,#7C3AED,#A855F7);}
+.net-card-icon{font-size:2rem;margin-bottom:0.5rem;}
+.net-card-role{font-size:1.1rem;font-weight:900;margin-bottom:0.1rem;}
+.net-card-adapter{font-size:0.8rem;opacity:0.9;margin-bottom:0.75rem;font-weight:500;}
+.net-card-ip{font-family:'JetBrains Mono',monospace;font-size:0.82rem;background:rgba(255,255,255,0.18);border-radius:7px;padding:0.45rem 0.6rem;line-height:1.7;}
+.net-card-badge{position:absolute;top:0.8rem;right:0.8rem;font-size:0.68rem;font-weight:700;background:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.4);border-radius:999px;padding:0.15rem 0.55rem;}
+
+.flow-diagram{display:flex;align-items:center;justify-content:center;gap:0.4rem;padding:2rem;background:var(--color-card);border:1px solid var(--color-border);border-radius:16px;overflow-x:auto;box-shadow:0 2px 8px rgba(0,0,0,0.05);flex-wrap:wrap;}
+.flow-node{background:var(--color-card);border:2px solid var(--node-color,var(--color-primary));border-radius:12px;padding:0.9rem;text-align:center;min-width:95px;transition:transform 0.2s,box-shadow 0.2s;}
+.flow-node:hover{transform:translateY(-4px);box-shadow:0 8px 25px rgba(0,0,0,0.12);}
+.flow-node-icon{font-size:1.5rem;margin-bottom:0.3rem;}
+.flow-node-title{font-weight:700;font-size:0.8rem;}
+.flow-node-desc{font-size:0.7rem;color:var(--color-muted);margin-top:0.15rem;}
+.flow-arrow{flex-shrink:0;}
+
+.cmd-card{background:var(--color-card);border:1px solid var(--color-border);border-radius:16px;overflow:hidden;margin-bottom:2rem;box-shadow:0 4px 6px -1px rgba(0,0,0,0.08);}
+.cmd-head{display:flex;align-items:center;gap:0.85rem;padding:1.1rem 1.5rem;color:white;background:var(--accent,var(--color-primary));}
+.cmd-badge{flex-shrink:0;width:2.1rem;height:2.1rem;border-radius:50%;background:rgba(255,255,255,0.25);border:2px solid rgba(255,255,255,0.6);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.05rem;}
+.cmd-emoji{font-size:1.7rem;}
+.cmd-name{font-weight:700;font-size:1.15rem;}
+.cmd-name small{display:block;font-weight:400;font-size:0.8rem;opacity:0.85;margin-top:0.1rem;}
+.click-path{background:#0F172A;color:#E2E8F0;padding:1.1rem 1.5rem;font-size:0.95rem;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;}
+.click-path .crumb{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:7px;padding:0.3rem 0.7rem;font-size:0.85rem;font-weight:500;white-space:nowrap;}
+.click-path .sep{color:#64748B;font-weight:700;}
+.cmd-terminal{background:#0F172A;color:#E2E8F0;padding:1.1rem 1.5rem;font-size:0.95rem;display:flex;align-items:center;gap:0.6rem;overflow-x:auto;font-family:'JetBrains Mono',monospace;}
+.cmd-terminal .prompt{color:#4ADE80;user-select:none;}
+.cmd-terminal code{white-space:nowrap;flex:1;}
+.copy-btn{flex-shrink:0;margin-left:auto;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:#E2E8F0;border-radius:8px;padding:0.35rem 0.75rem;font-size:0.8rem;font-family:'Noto Sans KR',sans-serif;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;transition:background 0.15s;}
+.copy-btn:hover{background:rgba(255,255,255,0.22);}
+.copy-btn.copied{background:var(--color-success);border-color:var(--color-success);color:white;}
+.cmd-body{padding:1.5rem;}
+.cmd-result-label{display:inline-flex;align-items:center;gap:0.4rem;font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--accent,var(--color-primary));margin-bottom:0.6rem;}
+.big-easy{font-size:1.05rem;font-weight:500;}
+.mini-steps{display:flex;flex-direction:column;gap:0.6rem;margin-top:1rem;}
+.mini-step{display:flex;gap:0.75rem;align-items:flex-start;background:var(--color-surface);border-radius:10px;padding:0.75rem 1rem;}
+.mini-step-num{flex-shrink:0;width:1.6rem;height:1.6rem;border-radius:50%;background:var(--accent,var(--color-primary));color:white;display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:700;}
+.mini-step-text{font-size:0.92rem;}
+
+.expected{background:#0B1220;color:#9FE6C0;border-radius:10px;padding:0.9rem 1.1rem;margin-top:1rem;font-family:'JetBrains Mono',monospace;font-size:0.8rem;line-height:1.7;overflow-x:auto;white-space:pre;}
+.expected .hl{color:#FCD34D;}
+
+.decision{margin-top:1.25rem;border:1px dashed var(--color-border);border-radius:12px;overflow:hidden;}
+.decision-title{background:var(--color-surface);padding:0.6rem 1rem;font-weight:700;font-size:0.85rem;color:var(--color-text);display:flex;align-items:center;gap:0.4rem;border-bottom:1px solid var(--color-border);}
+.decision-row{display:flex;gap:0.75rem;padding:0.8rem 1rem;align-items:flex-start;border-bottom:1px solid var(--color-border);}
+.decision-row:last-child{border-bottom:none;}
+.decision-cond{flex-shrink:0;min-width:150px;font-size:0.85rem;font-weight:600;background:var(--color-primary-light);color:#1E40AF;border-radius:6px;padding:0.35rem 0.6rem;align-self:flex-start;}
+.decision-arrow{flex-shrink:0;color:var(--color-muted);font-weight:700;padding-top:0.3rem;}
+.decision-action{font-size:0.9rem;}
+.decision-action.go{color:var(--color-success);font-weight:700;}
+.decision-action.warn{color:var(--color-warning);font-weight:700;}
+
+.analogy-box{display:flex;gap:1.1rem;padding:1.25rem;background:var(--color-secondary-light);border-radius:12px;border-left:4px solid var(--color-secondary);margin-top:1rem;}
+.analogy-icon{font-size:2rem;flex-shrink:0;}
+.analogy-title{font-weight:700;font-size:0.8rem;color:var(--color-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.35rem;}
+.analogy-text{line-height:1.65;font-size:0.95rem;}
+
+.callout{display:flex;gap:0.75rem;padding:1rem 1.25rem;border-radius:10px;align-items:flex-start;margin-top:1.5rem;}
+.callout-icon{font-size:1.25rem;flex-shrink:0;}
+.callout-content{font-size:0.95rem;line-height:1.6;}
+.callout-tip{background:var(--color-success-light);border-left:3px solid var(--color-success);}
+.callout-warning{background:var(--color-warning-light);border-left:3px solid var(--color-warning);}
+.callout-danger{background:var(--color-danger-light);border-left:3px solid var(--color-danger);}
+
+@media (max-width:768px){.hero h1{font-size:2rem;}.flow-diagram{flex-direction:column;}.flow-arrow svg{transform:rotate(90deg);}.decision-row{flex-direction:column;}.decision-cond{min-width:0;}.net-map{grid-template-columns:1fr;}}
+@media print{.hero{background:white !important;color:black !important;}.cmd-head{color:black !important;-webkit-print-color-adjust:exact;}.flow-node:hover{transform:none;}.copy-btn{display:none;}.net-card,.expected,.decision-cond{-webkit-print-color-adjust:exact;}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="container">
+    <div class="hero-tags">
+      <span class="pill">Windows</span>
+      <span class="pill">무선 어댑터 3개</span>
+      <span class="pill">인터넷 + 폐쇄망 2개</span>
+      <span class="pill">단계별 순차 실습</span>
+    </div>
+    <h1>실습 가이드<br>윈도우 3개 무선망 설정</h1>
+    <p class="hero-subtitle">노트북에 무선 어댑터 3개를 각각 다른 라우터에 붙여 — 인터넷 · 로봇제어 · 영상 — 동시에 쓰는 단계별 실습</p>
+  </div>
+</header>
+
+<section>
+  <div class="container">
+    <h2 class="section-title">목표 구성</h2>
+    <p class="section-lead">제어판에서 Wi-Fi를 하나씩 설정하면, 최종적으로 이렇게 세 망에 동시에 연결된 상태가 됩니다.</p>
+    <div class="net-map">
+      <div class="net-card internet">
+        <div class="net-card-badge">인터넷 ✓</div>
+        <div class="net-card-icon">🌐</div>
+        <div class="net-card-role">인터넷</div>
+        <div class="net-card-adapter">무선 LAN 어댑터 Wi-Fi</div>
+        <div class="net-card-ip">IP&nbsp;&nbsp; 192.168.0.58<br>GW&nbsp; 192.168.0.1</div>
+      </div>
+      <div class="net-card robot">
+        <div class="net-card-badge">폐쇄망</div>
+        <div class="net-card-icon">🤖</div>
+        <div class="net-card-role">로봇제어</div>
+        <div class="net-card-adapter">무선 LAN 어댑터 Wi-Fi 7</div>
+        <div class="net-card-ip">IP&nbsp;&nbsp; 192.168.50.179<br>GW&nbsp; 192.168.50.1</div>
+      </div>
+      <div class="net-card video">
+        <div class="net-card-badge">폐쇄망</div>
+        <div class="net-card-icon">📹</div>
+        <div class="net-card-role">영상</div>
+        <div class="net-card-adapter">무선 LAN 어댑터 Wi-Fi 8</div>
+        <div class="net-card-ip">IP&nbsp;&nbsp; 10.10.1.7<br>GW&nbsp; 10.10.1.1</div>
+      </div>
+    </div>
+    <div class="callout callout-tip"><span class="callout-icon">💡</span><span class="callout-content"><strong>핵심 원리:</strong> 인터넷으로 나가는 출구(default 게이트웨이)는 <strong>인터넷 망(Wi-Fi) 하나만</strong> 갖게 하고, 로봇·영상 폐쇄망 두 개는 <strong>각자 대역 통신만</strong> 담당하게 합니다. 그래야 충돌 없이 셋이 동시에 돌아갑니다.</span></div>
+  </div>
+</section>
+
+<section style="padding-top:0;">
+  <div class="container">
+    <h2 class="section-title">이 실습의 방식</h2>
+    <p class="section-lead"><strong>① 어댑터 하나 설정 → ② 상태 확인 → ③ 결과에 따라 다음</strong>. 세 어댑터를 차례로 붙이고, 마지막에 폐쇄망의 인터넷 출구를 정리합니다.</p>
+    <div class="flow-diagram">
+      <div class="flow-node" style="--node-color:#64748B"><div class="flow-node-icon">①</div><div class="flow-node-title">STEP 1</div><div class="flow-node-desc">어댑터 3개 확인</div></div>
+      <div class="flow-arrow"><svg width="28" height="20" viewBox="0 0 40 24"><path d="M0 12h30M24 4l8 8-8 8" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+      <div class="flow-node" style="--node-color:#059669"><div class="flow-node-icon">②</div><div class="flow-node-title">STEP 2</div><div class="flow-node-desc">인터넷 망</div></div>
+      <div class="flow-arrow"><svg width="28" height="20" viewBox="0 0 40 24"><path d="M0 12h30M24 4l8 8-8 8" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+      <div class="flow-node" style="--node-color:#D97706"><div class="flow-node-icon">③</div><div class="flow-node-title">STEP 3</div><div class="flow-node-desc">로봇 폐쇄망</div></div>
+      <div class="flow-arrow"><svg width="28" height="20" viewBox="0 0 40 24"><path d="M0 12h30M24 4l8 8-8 8" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+      <div class="flow-node" style="--node-color:#7C3AED"><div class="flow-node-icon">④</div><div class="flow-node-title">STEP 4</div><div class="flow-node-desc">영상 폐쇄망</div></div>
+      <div class="flow-arrow"><svg width="28" height="20" viewBox="0 0 40 24"><path d="M0 12h30M24 4l8 8-8 8" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+      <div class="flow-node" style="--node-color:#DC2626"><div class="flow-node-icon">⑤</div><div class="flow-node-title">STEP 5</div><div class="flow-node-desc">출구 정리</div></div>
+      <div class="flow-arrow"><svg width="28" height="20" viewBox="0 0 40 24"><path d="M0 12h30M24 4l8 8-8 8" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+      <div class="flow-node" style="--node-color:#2563EB"><div class="flow-node-icon">⑥</div><div class="flow-node-title">STEP 6</div><div class="flow-node-desc">최종 점검</div></div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0;">
+  <div class="container">
+    <h2 class="section-title">단계별 실습</h2>
+    <p class="section-lead">제어판/설정 클릭으로 진행하고, 확인은 명령 프롬프트(<code>ipconfig</code>)로 합니다.</p>
+
+    <!-- STEP 1 -->
+    <div class="cmd-card" style="--accent:#64748B;">
+      <div class="cmd-head"><span class="cmd-badge">1</span><span class="cmd-emoji">🔍</span><div class="cmd-name">무선 어댑터 3개 확인<small>현재 상태 파악</small></div></div>
+      <div class="cmd-terminal"><span class="prompt">C:\&gt;</span><code>ipconfig</code><button class="copy-btn" data-cmd="ipconfig">📋 복사</button></div>
+      <div class="cmd-body">
+        <div class="cmd-result-label">▶ 이렇게 하면</div>
+        <p class="big-easy">노트북에 잡힌 <strong>무선 어댑터 3개</strong>와 각각의 IP·게이트웨이가 나와요.</p>
+        <div class="expected">무선 LAN 어댑터 <span class="hl">Wi-Fi</span>:
+   IPv4 주소 . . . : 192.168.0.58      ← 인터넷
+   기본 게이트웨이 . : 192.168.0.1
+
+무선 LAN 어댑터 <span class="hl">Wi-Fi 7</span>:
+   IPv4 주소 . . . : 192.168.50.179    ← 로봇제어
+   기본 게이트웨이 . : 192.168.50.1
+
+무선 LAN 어댑터 <span class="hl">Wi-Fi 8</span>:
+   IPv4 주소 . . . : 10.10.1.7         ← 영상
+   기본 게이트웨이 . : 10.10.1.1</div>
+        <div class="decision">
+          <div class="decision-title">🔀 결과에 따라</div>
+          <div class="decision-row"><span class="decision-cond">어댑터 3개 보임</span><span class="decision-arrow">→</span><span class="decision-action go">동글 인식 완료. STEP 2로</span></div>
+          <div class="decision-row"><span class="decision-cond">3개 미만</span><span class="decision-arrow">→</span><span class="decision-action warn">동글 다시 꽂기 / 드라이버 설치 후 STEP 1 반복</span></div>
+        </div>
+        <div class="callout callout-tip"><span class="callout-icon">💡</span><span class="callout-content">윈도우는 동글을 꽂은 순서대로 "Wi-Fi", "Wi-Fi 7", "Wi-Fi 8"처럼 번호를 붙여요. 이름으로 어떤 어댑터인지 구분하면 됩니다.</span></div>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="cmd-card" style="--accent:#059669;">
+      <div class="cmd-head"><span class="cmd-badge">2</span><span class="cmd-emoji">🌐</span><div class="cmd-name">인터넷 망 연결<small>Wi-Fi → 192.168.0.x</small></div></div>
+      <div class="click-path"><span class="crumb">제어판</span><span class="sep">›</span><span class="crumb">네트워크 및 공유 센터</span><span class="sep">›</span><span class="crumb">어댑터 설정 변경</span><span class="sep">›</span><span class="crumb">Wi-Fi 선택</span><span class="sep">›</span><span class="crumb">인터넷 라우터 접속</span></div>
+      <div class="cmd-body">
+        <div class="cmd-result-label">▶ 이렇게 하면</div>
+        <p class="big-easy">첫 번째 어댑터(Wi-Fi)를 <strong>인터넷 라우터</strong>(192.168.0.1)에 붙여요.</p>
+        <div class="mini-steps">
+          <div class="mini-step"><span class="mini-step-num">1</span><span class="mini-step-text">"Wi-Fi" 어댑터를 선택하고 인터넷용 SSID에 접속해요.</span></div>
+          <div class="mini-step"><span class="mini-step-num">2</span><span class="mini-step-text">이 망은 인터넷이 되는 망이라, 게이트웨이(192.168.0.1)를 그대로 둬요.</span></div>
+        </div>
+        <div class="decision">
+          <div class="decision-title">🔀 결과에 따라 (ipconfig 로 확인)</div>
+          <div class="decision-row"><span class="decision-cond">192.168.0.x 받음</span><span class="decision-arrow">→</span><span class="decision-action go">인터넷 망 연결 성공. STEP 3으로</span></div>
+          <div class="decision-row"><span class="decision-cond">IP 못 받음</span><span class="decision-arrow">→</span><span class="decision-action warn">SSID·비밀번호 확인 후 재접속</span></div>
+        </div>
+        <div class="analogy-box"><div class="analogy-icon">🚪</div><div class="analogy-content"><div class="analogy-title">쉽게 말하면</div><p class="analogy-text">세 개의 문 중 첫 번째 문을 "바깥세상(인터넷)으로 나가는 정문"으로 정한 거예요.</p></div></div>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="cmd-card" style="--accent:#D97706;">
+      <div class="cmd-head"><span class="cmd-badge">3</span><span class="cmd-emoji">🤖</span><div class="cmd-name">로봇제어 폐쇄망 연결<small>Wi-Fi 7 → 192.168.50.x</small></div></div>
+      <div class="click-path"><span class="crumb">어댑터 설정 변경</span><span class="sep">›</span><span class="crumb">Wi-Fi 7 선택</span><span class="sep">›</span><span class="crumb">로봇망 SSID 접속</span></div>
+      <div class="cmd-body">
+        <div class="cmd-result-label">▶ 이렇게 하면</div>
+        <p class="big-easy">두 번째 어댑터(Wi-Fi 7)를 <strong>로봇제어 폐쇄망</strong>(192.168.50.1)에 붙여요.</p>
+        <div class="mini-steps">
+          <div class="mini-step"><span class="mini-step-num">1</span><span class="mini-step-text">"Wi-Fi 7" 어댑터를 선택하고 로봇망 SSID에 접속해요.</span></div>
+          <div class="mini-step"><span class="mini-step-num">2</span><span class="mini-step-text">이 망은 인터넷이 없는 폐쇄망이에요. 192.168.50.x IP를 받으면 정상이에요.</span></div>
+        </div>
+        <div class="decision">
+          <div class="decision-title">🔀 결과에 따라</div>
+          <div class="decision-row"><span class="decision-cond">192.168.50.x 받음</span><span class="decision-arrow">→</span><span class="decision-action go">로봇망 연결 성공. STEP 4로</span></div>
+          <div class="decision-row"><span class="decision-cond">인터넷 끊김</span><span class="decision-arrow">→</span><span class="decision-action warn">폐쇄망이 default를 가져간 것. STEP 5에서 정리</span></div>
+        </div>
+        <div class="callout callout-warning"><span class="callout-icon">⚠️</span><span class="callout-content">폐쇄망을 붙이면 갑자기 인터넷이 안 될 수 있어요. 폐쇄망 어댑터가 인터넷 출구(default)를 가로챘기 때문인데, STEP 5에서 바로잡습니다. 지금은 그냥 진행하세요.</span></div>
+      </div>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="cmd-card" style="--accent:#7C3AED;">
+      <div class="cmd-head"><span class="cmd-badge">4</span><span class="cmd-emoji">📹</span><div class="cmd-name">영상 폐쇄망 연결<small>Wi-Fi 8 → 10.10.1.x</small></div></div>
+      <div class="click-path"><span class="crumb">어댑터 설정 변경</span><span class="sep">›</span><span class="crumb">Wi-Fi 8 선택</span><span class="sep">›</span><span class="crumb">영상망 SSID 접속</span></div>
+      <div class="cmd-body">
+        <div class="cmd-result-label">▶ 이렇게 하면</div>
+        <p class="big-easy">세 번째 어댑터(Wi-Fi 8)를 <strong>영상 폐쇄망</strong>(10.10.1.1)에 붙여요.</p>
+        <div class="mini-steps">
+          <div class="mini-step"><span class="mini-step-num">1</span><span class="mini-step-text">"Wi-Fi 8" 어댑터를 선택하고 영상망 SSID에 접속해요.</span></div>
+          <div class="mini-step"><span class="mini-step-num">2</span><span class="mini-step-text">10.10.1.x IP를 받으면 세 망에 모두 붙은 거예요.</span></div>
+        </div>
+        <div class="decision">
+          <div class="decision-title">🔀 결과에 따라 (ipconfig 로 확인)</div>
+          <div class="decision-row"><span class="decision-cond">10.10.1.x 받음</span><span class="decision-arrow">→</span><span class="decision-action go">세 망 모두 연결! STEP 5로 출구 정리</span></div>
+          <div class="decision-row"><span class="decision-cond">IP 못 받음</span><span class="decision-arrow">→</span><span class="decision-action warn">영상망 SSID·비밀번호 확인</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 5 -->
+    <div class="cmd-card" style="--accent:#DC2626;">
+      <div class="cmd-head"><span class="cmd-badge">5</span><span class="cmd-emoji">🚦</span><div class="cmd-name">인터넷 출구 하나로 정리<small>핵심 단계!</small></div></div>
+      <div class="click-path"><span class="crumb">Wi-Fi 7 / Wi-Fi 8 각각</span><span class="sep">›</span><span class="crumb">속성</span><span class="sep">›</span><span class="crumb">IPv4 속성</span><span class="sep">›</span><span class="crumb">고급</span><span class="sep">›</span><span class="crumb">"원격 네트워크에 기본 게이트웨이 사용" 체크 해제</span></div>
+      <div class="cmd-body">
+        <div class="cmd-result-label">▶ 이렇게 하면</div>
+        <p class="big-easy">폐쇄망 두 개가 <strong>인터넷 출구를 가로채지 않도록</strong> 막아요. 그러면 인터넷은 Wi-Fi 망으로만 나가요.</p>
+        <div class="mini-steps">
+          <div class="mini-step"><span class="mini-step-num">1</span><span class="mini-step-text">"Wi-Fi 7"(로봇) 어댑터 → 속성 → "인터넷 프로토콜 버전 4(TCP/IPv4)" 선택 → 속성.</span></div>
+          <div class="mini-step"><span class="mini-step-num">2</span><span class="mini-step-text">"고급" 버튼 → IP 설정 탭에서 <strong>"원격 네트워크에 기본 게이트웨이 사용"</strong> 체크를 해제해요.</span></div>
+          <div class="mini-step"><span class="mini-step-num">3</span><span class="mini-step-text">"Wi-Fi 8"(영상) 어댑터에도 똑같이 체크를 해제해요.</span></div>
+          <div class="mini-step"><span class="mini-step-num">4</span><span class="mini-step-text">인터넷 망(Wi-Fi)은 건드리지 않아요 — 이게 유일한 인터넷 출구예요.</span></div>
+        </div>
+        <div class="analogy-box"><div class="analogy-icon">🚪</div><div class="analogy-content"><div class="analogy-title">쉽게 말하면</div><p class="analogy-text">문이 세 개인데, 바깥(인터넷)으로 나가는 정문은 하나(Wi-Fi)로 정하는 거예요. 로봇 문·영상 문은 집 안(폐쇄망)에서만 쓰고, 바깥으로는 안 나가게 잠가둬요.</p></div></div>
+        <div class="callout callout-danger"><span class="callout-icon">🔧</span><span class="callout-content"><strong>이 단계가 핵심입니다.</strong> 폐쇄망은 인터넷이 없는데도 default 게이트웨이를 들고 있으면, 인터넷 트래픽이 그쪽으로 잘못 나가 인터넷이 먹통이 돼요. 폐쇄망 두 개의 게이트웨이 사용을 꺼야 인터넷·로봇·영상이 동시에 정상 동작합니다.</span></div>
+      </div>
+    </div>
+
+    <!-- STEP 6 -->
+    <div class="cmd-card" style="--accent:#2563EB;">
+      <div class="cmd-head"><span class="cmd-badge">6</span><span class="cmd-emoji">✅</span><div class="cmd-name">최종 점검<small>세 망 모두 확인</small></div></div>
+      <div class="cmd-terminal"><span class="prompt">C:\&gt;</span><code>route print -4</code><button class="copy-btn" data-cmd="route print -4">📋 복사</button></div>
+      <div class="cmd-body">
+        <div class="cmd-result-label">▶ 이렇게 하면</div>
+        <p class="big-easy">인터넷 출구(default, 0.0.0.0)가 <strong>인터넷 게이트웨이 하나만</strong> 남았는지 확인해요.</p>
+        <div class="expected">0.0.0.0   0.0.0.0   <span class="hl">192.168.0.1</span>   192.168.0.58   ← 인터넷 출구 1개만!</div>
+        <div class="mini-steps">
+          <div class="mini-step"><span class="mini-step-num">1</span><span class="mini-step-text">0.0.0.0 줄(기본 경로)이 <strong>192.168.0.1 하나만</strong> 나오면 출구 정리 성공.</span></div>
+          <div class="mini-step"><span class="mini-step-num">2</span><span class="mini-step-text">로봇·영상 망은 각자 대역(192.168.50.x / 10.10.1.x)으로만 통신해요.</span></div>
+        </div>
+        <div class="decision">
+          <div class="decision-title">🔀 각 망 통신 확인 (핑 테스트)</div>
+          <div class="decision-row"><span class="decision-cond">ping 8.8.8.8</span><span class="decision-arrow">→</span><span class="decision-action go">응답 오면 인터넷 정상 (Wi-Fi)</span></div>
+          <div class="decision-row"><span class="decision-cond">ping 192.168.50.1</span><span class="decision-arrow">→</span><span class="decision-action go">응답 오면 로봇망 정상 (Wi-Fi 7)</span></div>
+          <div class="decision-row"><span class="decision-cond">ping 10.10.1.1</span><span class="decision-arrow">→</span><span class="decision-action go">응답 오면 영상망 정상 (Wi-Fi 8)</span></div>
+        </div>
+        <div class="callout callout-tip"><span class="callout-icon">💡</span><span class="callout-content">세 핑이 모두 응답하면 완벽해요. 인터넷·로봇제어·영상이 각자 제 어댑터로 동시에 통신하는 상태입니다.</span></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section style="padding-top:0;">
+  <div class="container">
+    <h2 class="section-title">정리: 왜 이렇게 하나</h2>
+    <p class="section-lead">한 문단으로 핵심만.</p>
+    <div class="cmd-card" style="--accent:#2563EB;">
+      <div class="cmd-body">
+        <p class="big-easy" style="margin-bottom:1rem;">어댑터가 셋이면 <strong>인터넷 출구(default 게이트웨이)도 셋</strong>이 되려 해서 트래픽이 엉켜요. 폐쇄망은 인터넷이 없으니 그쪽으로 나가면 먹통이 되죠.</p>
+        <div class="mini-steps">
+          <div class="mini-step"><span class="mini-step-num" style="background:#059669;">✓</span><span class="mini-step-text">인터넷 망(Wi-Fi)만 게이트웨이를 갖게 둬요.</span></div>
+          <div class="mini-step"><span class="mini-step-num" style="background:#DC2626;">✕</span><span class="mini-step-text">로봇·영상 폐쇄망은 "기본 게이트웨이 사용" 체크 해제 → 인터넷 출구에서 빠짐.</span></div>
+          <div class="mini-step"><span class="mini-step-num" style="background:#2563EB;">=</span><span class="mini-step-text">결과: 인터넷은 한 문으로만, 로봇·영상은 각자 대역으로 동시 통신.</span></div>
+        </div>
+        <div class="callout callout-tip"><span class="callout-icon">🔁</span><span class="callout-content"><strong>우분투와 같은 원리:</strong> 윈도우의 "기본 게이트웨이 사용 체크 해제"는 우분투의 <code>ipv4.never-default yes</code> 와 똑같은 역할이에요. 둘 다 "인터넷 출구를 하나로" 만드는 거죠.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  document.querySelectorAll('.copy-btn').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var cmd=btn.getAttribute('data-cmd');
+      var done=function(){var original=btn.innerHTML;btn.innerHTML='✅ 복사됨';btn.classList.add('copied');setTimeout(function(){btn.innerHTML=original;btn.classList.remove('copied');},1500);};
+      if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(cmd).then(done).catch(function(){fallbackCopy(cmd,done);});}
+      else{fallbackCopy(cmd,done);}
+    });
+  });
+  function fallbackCopy(text,done){var ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(ta);done();}
+</script>
+</body>
+</html>

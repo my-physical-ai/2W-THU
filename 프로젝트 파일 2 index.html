@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NUC 통합 모니터링 — 템플릿 선택</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,'Noto Sans KR',sans-serif;background:#0b1020;color:#e8eefc;
+    min-height:100vh;display:flex;flex-direction:column}
+  header{padding:18px 20px;border-bottom:1px solid #233;text-align:center}
+  header h1{font-size:20px}
+  header p{font-size:13px;color:#9aa7c7;margin-top:6px}
+  .wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:24px}
+  .choices{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:760px;width:100%}
+  .choice{background:#121933;border:1px solid #233;border-radius:16px;overflow:hidden;
+    text-decoration:none;color:inherit;transition:transform .15s,border-color .15s;display:flex;flex-direction:column}
+  .choice:hover{transform:translateY(-4px);border-color:#3b82f6}
+  .choice .top{height:120px;display:flex;align-items:center;justify-content:center;font-size:48px}
+  .control .top{background:linear-gradient(135deg,#0f172a,#1e3a8a)}
+  .cards .top{background:linear-gradient(135deg,#312e81,#7c3aed)}
+  .choice .body{padding:18px}
+  .choice h2{font-size:18px;margin-bottom:8px}
+  .choice p{font-size:13px;color:#9aa7c7;line-height:1.6}
+  .tag{display:inline-block;font-size:11px;background:#1b2440;border:1px solid #334;
+    padding:3px 9px;border-radius:999px;margin-top:12px;color:#c4d3ff}
+  footer{padding:16px;text-align:center;font-size:12px;color:#667}
+  @media(max-width:560px){ .choices{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+  <header>
+    <h1>📹 NUC 통합 모니터링</h1>
+    <p>공장 운영 화면 샘플 2종입니다. 팀이 이걸 출발점으로 우리 공장에 맞게 꾸밉니다.</p>
+  </header>
+
+  <div class="wrap">
+    <div class="choices">
+      <a class="choice control" href="/control">
+        <div class="top">🛰️</div>
+        <div class="body">
+          <h2>관제센터형</h2>
+          <p>공장 관제실 스타일. 구역별 카메라 목록(입구·A라인·B라인·포장·창고) + 큰 메인 + 상태 패널.</p>
+          <span class="tag">공장 관제 · 구역별 모니터링</span>
+        </div>
+      </a>
+      <a class="choice cards" href="/cards">
+        <div class="top">🗂️</div>
+        <div class="body">
+          <h2>카드형</h2>
+          <p>공장 라인/품질검증/물류 카드를 3D 느낌으로 배치. 카드마다 KPI 표시.</p>
+          <span class="tag">라인 카드 · 3D 인터랙션</span>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <footer>Physical AI 교육 · LeKiwi 프로젝트 · 백엔드 공통 / 화면은 templates 에서 수정</footer>
+</body>
+</html>

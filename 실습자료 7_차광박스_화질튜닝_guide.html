@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>실습 가이드 카메라 차광 박스와 화질 튜닝</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --color-primary: #2563EB; --color-primary-light: #DBEAFE;
+    --color-secondary: #7C3AED; --color-secondary-light: #EDE9FE;
+    --color-success: #059669; --color-success-light: #D1FAE5;
+    --color-warning: #D97706; --color-warning-light: #FEF3C7;
+    --color-danger: #DC2626; --color-danger-light: #FEE2E2;
+    --color-surface: #F8FAFC; --color-card: #FFFFFF;
+    --color-text: #1E293B; --color-muted: #64748B; --color-border: #E2E8F0;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans KR', sans-serif; color: var(--color-text);
+    background: var(--color-surface); line-height: 1.75; }
+  code, pre { font-family: 'JetBrains Mono', monospace; }
+  .container { max-width: 900px; margin: 0 auto; padding: 0 1.5rem; }
+  section { padding: 3rem 0; }
+  .section-title { font-size: 1.85rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .section-lead { color: var(--color-muted); margin-bottom: 2rem; }
+
+  .hero { background: linear-gradient(135deg, #064E3B, #10B981); color: white; padding: 3.5rem 0 3rem; }
+  .hero h1 { font-size: 2.6rem; font-weight: 900; line-height: 1.2; }
+  .hero-subtitle { font-size: 1.1rem; margin-top: 0.85rem; opacity: 0.95; }
+  .hero-tags { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+  .pill { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.35);
+    padding: 0.3rem 0.85rem; border-radius: 999px; font-size: 0.8rem; font-weight: 500; }
+
+  .why-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: 1.25rem; margin-top: 1rem; }
+  .why-card { background: var(--color-card); border: 1px solid var(--color-border); border-radius: 14px;
+    padding: 1.4rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-top: 4px solid var(--c, #10B981); }
+  .why-card .why-icon { font-size: 2rem; }
+  .why-card h3 { font-size: 1.05rem; margin: 0.6rem 0 0.4rem; }
+  .why-card p { font-size: 0.9rem; color: var(--color-muted); }
+
+  .flow-diagram { display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    padding: 2rem; background: var(--color-card); border: 1px solid var(--color-border);
+    border-radius: 16px; overflow-x: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+  .flow-node { background: var(--color-card); border: 2px solid var(--node-color, var(--color-primary));
+    border-radius: 12px; padding: 1.1rem; text-align: center; min-width: 110px; transition: transform 0.2s, box-shadow 0.2s; }
+  .flow-node:hover { transform: translateY(-4px); box-shadow: 0 8px 25px rgba(0,0,0,0.12); }
+  .flow-node-icon { font-size: 1.8rem; margin-bottom: 0.4rem; }
+  .flow-node-title { font-weight: 700; font-size: 0.9rem; }
+  .flow-node-desc { font-size: 0.78rem; color: var(--color-muted); margin-top: 0.2rem; }
+  .flow-arrow { flex-shrink: 0; }
+
+  .cmd-card { background: var(--color-card); border: 1px solid var(--color-border);
+    border-radius: 16px; overflow: hidden; margin-bottom: 2rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.08); }
+  .cmd-head { display: flex; align-items: center; gap: 0.85rem; padding: 1.1rem 1.5rem; color: white; background: var(--accent, var(--color-primary)); }
+  .cmd-badge { flex-shrink: 0; width: 2.1rem; height: 2.1rem; border-radius: 50%;
+    background: rgba(255,255,255,0.25); border: 2px solid rgba(255,255,255,0.6);
+    display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.05rem; }
+  .cmd-emoji { font-size: 1.7rem; }
+  .cmd-name { font-weight: 700; font-size: 1.15rem; }
+  .cmd-name small { display:block; font-weight:400; font-size:0.8rem; opacity:0.85; margin-top:0.1rem; }
+  .cmd-terminal { background: #0F172A; color: #E2E8F0; padding: 1.1rem 1.5rem; font-size: 0.95rem;
+    display: flex; align-items: center; gap: 0.6rem; overflow-x: auto; font-family: 'JetBrains Mono', monospace; }
+  .cmd-terminal .prompt { color: #4ADE80; user-select: none; }
+  .cmd-terminal code { white-space: nowrap; flex: 1; }
+  .copy-btn { flex-shrink: 0; margin-left: auto; background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.25); color: #E2E8F0; border-radius: 8px;
+    padding: 0.35rem 0.75rem; font-size: 0.8rem; font-family: 'Noto Sans KR', sans-serif;
+    font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; transition: background 0.15s; }
+  .copy-btn:hover { background: rgba(255,255,255,0.22); }
+  .copy-btn.copied { background: var(--color-success); border-color: var(--color-success); color: white; }
+  .cmd-body { padding: 1.5rem; }
+  .cmd-result-label { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.78rem;
+    font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent, var(--color-primary)); margin-bottom: 0.6rem; }
+  .big-easy { font-size: 1.05rem; font-weight: 500; }
+  .mini-steps { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 1rem; }
+  .mini-step { display: flex; gap: 0.75rem; align-items: flex-start; background: var(--color-surface); border-radius: 10px; padding: 0.75rem 1rem; }
+  .mini-step-num { flex-shrink: 0; width: 1.6rem; height: 1.6rem; border-radius: 50%;
+    background: var(--accent, var(--color-primary)); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; }
+  .mini-step-text { font-size: 0.92rem; }
+
+  .analogy-box { display: flex; gap: 1.1rem; padding: 1.25rem; background: var(--color-secondary-light);
+    border-radius: 12px; border-left: 4px solid var(--color-secondary); margin-top: 1rem; }
+  .analogy-icon { font-size: 2rem; flex-shrink: 0; }
+  .analogy-title { font-weight: 700; font-size: 0.8rem; color: var(--color-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; }
+  .analogy-text { line-height: 1.65; font-size: 0.95rem; }
+
+  .callout { display: flex; gap: 0.75rem; padding: 1rem 1.25rem; border-radius: 10px; align-items: flex-start; margin-top: 1.5rem; }
+  .callout-icon { font-size: 1.25rem; flex-shrink: 0; }
+  .callout-content { font-size: 0.95rem; line-height: 1.6; }
+  .callout-tip { background: var(--color-success-light); border-left: 3px solid var(--color-success); }
+  .callout-warning { background: var(--color-warning-light); border-left: 3px solid var(--color-warning); }
+
+  .info-table { width:100%; border-collapse: collapse; background: var(--color-card);
+    border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-top:1rem; }
+  .info-table th { background: var(--color-success); color: white; padding: 0.85rem 1rem; text-align: left; font-size: 0.9rem; }
+  .info-table td { padding: 0.8rem 1rem; border-bottom: 1px solid var(--color-border); font-size: 0.9rem; }
+  .info-table tr:last-child td { border-bottom: none; }
+  .info-table code { background: var(--color-surface); padding: 0.15rem 0.4rem; border-radius: 5px; font-size: 0.85rem; }
+  .verdict { display:inline-block; padding:0.15rem 0.6rem; border-radius:999px; font-size:0.8rem; font-weight:700; }
+  .v-good { background: var(--color-success-light); color: var(--color-success); }
+  .v-bad { background: var(--color-danger-light); color: var(--color-danger); }
+
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 2rem; }
+    .flow-diagram { flex-direction: column; } .flow-arrow svg { transform: rotate(90deg); }
+  }
+  @media print {
+    .hero { background: white !important; color: black !important; }
+    .cmd-head { color: black !important; -webkit-print-color-adjust: exact; }
+    .copy-btn { display: none; }
+    .flow-node:hover { transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="container">
+    <div class="hero-tags">
+      <span class="pill">차광 박스</span>
+      <span class="pill">화질 튜닝</span>
+      <span class="pill">ACT 학습</span>
+      <span class="pill">밝기·JPEG 품질</span>
+    </div>
+    <h1>실습 가이드 카메라 차광 박스와 화질 튜닝</h1>
+    <p class="hero-subtitle">카메라에 검은 박스(차광 후드)를 씌우면 왜 좋은지 배우고, 화질을 직접 측정·조정해 봅니다. (실습자료 ②)</p>
+  </div>
+</div>
+
+<section>
+  <div class="container">
+    <h2 class="section-title">🤔 검은 박스, 왜 씌우나요?</h2>
+    <p class="section-lead">박스를 씌우면 화면이 좀 어두워지고 흐려져요. 그런데도 쓰는 데는 이유가 있습니다. 핵심은 "빛을 막아서 화면을 일정하게 만드는 것"이에요.</p>
+
+    <div class="why-grid">
+      <div class="why-card" style="--c:#10B981;">
+        <div class="why-icon">🌥️</div>
+        <h3>① 역광·잡광 차단</h3>
+        <p>창문·형광등 같은 강한 빛이 렌즈로 바로 들어오면 화면이 하얗게 떠요. 박스가 옆빛을 막아 또렷하게 만들어요.</p>
+      </div>
+      <div class="why-card" style="--c:#2563EB;">
+        <div class="why-icon">🎯</div>
+        <h3>② 학습 화면 고정 (제일 중요)</h3>
+        <p>ACT 학습은 "배울 때 화면 = 실제 화면"일수록 잘 돼요. 박스로 외부 빛을 막으면 낮·밤·날씨와 상관없이 항상 비슷한 화면이 돼요.</p>
+      </div>
+      <div class="why-card" style="--c:#7C3AED;">
+        <div class="why-icon">📐</div>
+        <h3>③ 거리·시야 고정</h3>
+        <p>박스가 카메라와 작업면 사이 거리를 딱 고정해줘요. 늘 같은 위치·각도를 보게 돼요.</p>
+      </div>
+      <div class="why-card" style="--c:#D97706;">
+        <div class="why-icon">🛡️</div>
+        <h3>④ 렌즈 보호</h3>
+        <p>로봇 팔 주변 먼지·충돌·손가락 접촉에서 렌즈를 지켜줘요.</p>
+      </div>
+    </div>
+
+    <div class="analogy-box">
+      <div class="analogy-icon">📷</div>
+      <div class="analogy-content">
+        <div class="analogy-title">쉽게 말하면</div>
+        <p class="analogy-text">햇빛이 셀 때 눈 위에 손을 올려 그늘을 만들면 더 잘 보이죠? 검은 박스는 카메라에게 <strong>손차양</strong>을 만들어 주는 거예요. 대신 그늘이 지니 좀 어두워지는 거고요.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="background:#fff;">
+  <div class="container">
+    <h2 class="section-title">⚖️ 어디에 쓰면 좋고, 어디엔 별로일까?</h2>
+    <table class="info-table">
+      <tr><th>상황</th><th>검은 박스</th><th>이유</th></tr>
+      <tr><td>ACT 학습용 (front)</td><td><span class="verdict v-good">◎ 좋음</span></td><td>화면이 항상 일정해야 학습이 잘 됨</td></tr>
+      <tr><td>역광·잡광 많은 곳</td><td><span class="verdict v-good">◎ 좋음</span></td><td>빛 번짐을 막아 또렷해짐</td></tr>
+      <tr><td>장애물 예측 (top)</td><td><span class="verdict v-bad">△ 불리</span></td><td>넓고 밝은 시야가 필요한데 박스가 가림</td></tr>
+      <tr><td>선명한 일반 모니터링</td><td><span class="verdict v-bad">△ 불리</span></td><td>박스 안이 어두워 화질이 떨어짐</td></tr>
+    </table>
+    <div class="callout callout-tip"><span class="callout-icon">💡</span><span class="callout-content"><strong>결론:</strong> front(ACT 학습용)에는 박스가 합리적이에요. top(장애물 예측)은 후드를 빼서 넓고 밝게 보는 게 나을 수 있어요.</span></div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <h2 class="section-title">👀 한눈에 보기</h2>
+    <p class="section-lead">박스를 씌운 카메라가 너무 어둡지 않은지 측정하고, 화질을 바꿔가며 최적값을 찾는 순서예요.</p>
+    <div class="flow-diagram">
+      <div class="flow-node" style="--node-color:#64748B"><div class="flow-node-icon">📷</div><div class="flow-node-title">1. 정보 확인</div><div class="flow-node-desc">--info</div></div>
+      <div class="flow-arrow"><svg width="34" height="24" viewBox="0 0 40 24"><path d="M0 12h30M24 4l8 8-8 8" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+      <div class="flow-node" style="--node-color:#2563EB"><div class="flow-node-icon">💡</div><div class="flow-node-title">2. 밝기 측정</div><div class="flow-node-desc">--bright</div></div>
+      <div class="flow-arrow"><svg width="34" height="24" viewBox="0 0 40 24"><path d="M0 12h30M24 4l8 8-8 8" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+      <div class="flow-node" style="--node-color:#7C3AED"><div class="flow-node-icon">📸</div><div class="flow-node-title">3. 한 장 캡처</div><div class="flow-node-desc">기본 캡처</div></div>
+      <div class="flow-arrow"><svg width="34" height="24" viewBox="0 0 40 24"><path d="M0 12h30M24 4l8 8-8 8" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+      <div class="flow-node" style="--node-color:#D97706"><div class="flow-node-icon">🔬</div><div class="flow-node-title">4. 품질 비교</div><div class="flow-node-desc">--compare</div></div>
+      <div class="flow-arrow"><svg width="34" height="24" viewBox="0 0 40 24"><path d="M0 12h30M24 4l8 8-8 8" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+      <div class="flow-node" style="--node-color:#059669"><div class="flow-node-icon">✅</div><div class="flow-node-title">5. 값 정하기</div><div class="flow-node-desc">서버에 반영</div></div>
+    </div>
+  </div>
+</section>
+
+<section style="background:#fff;">
+  <div class="container">
+    <h2 class="section-title">📋 단계별 실습</h2>
+    <p class="section-lead">실습 파일은 <code>camera_quality_check.py</code>예요. Pi5에서 실행합니다. (먼저 <code>pip install opencv-python numpy</code> 필요)</p>
+
+    <!-- 1 -->
+    <div class="cmd-card" style="--accent:#64748B;">
+      <div class="cmd-head"><span class="cmd-badge">1</span><span class="cmd-emoji">📷</span><div class="cmd-name">카메라 정보 확인<small>실제 적용된 해상도·FPS 보기</small></div></div>
+      <div class="cmd-terminal"><span class="prompt">$</span><code>python3 camera_quality_check.py --device /dev/video1 --info</code><button class="copy-btn" data-cmd="python3 camera_quality_check.py --device /dev/video1 --info">📋 복사</button></div>
+      <div class="cmd-body">
+        <div class="cmd-result-label">▶ 이렇게 하면</div>
+        <p class="big-easy">카메라가 실제로 <strong>몇 픽셀, 몇 FPS</strong>로 잡히는지 알려줘요.</p>
+        <div class="mini-steps">
+          <div class="mini-step"><span class="mini-step-num">1</span><span class="mini-step-text">내가 원한 해상도가 진짜 적용됐는지 확인할 수 있어요.</span></div>
+          <div class="mini-step"><span class="mini-step-num">2</span><span class="mini-step-text">KINGSEN은 front라 보통 <code>/dev/video1</code>이에요.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2 -->
+    <div class="cmd-card" style="--accent:#2563EB;">
+      <div class="cmd-head"><span class="cmd-badge">2</span><span class="cmd-emoji">💡</span><div class="cmd-name">밝기 측정<small>박스 안이 너무 어두운지 숫자로 확인</small></div></div>
+      <div class="cmd-terminal"><span class="prompt">$</span><code>python3 camera_quality_check.py --device /dev/video1 --bright</code><button class="copy-btn" data-cmd="python3 camera_quality_check.py --device /dev/video1 --bright">📋 복사</button></div>
+      <div class="cmd-body">
+        <div class="cmd-result-label">▶ 이렇게 하면</div>
+        <p class="big-easy">화면 평균 밝기를 <strong>0~255 숫자</strong>로 알려주고, 어두운지 판단해줘요.</p>
+        <div class="mini-steps">
+          <div class="mini-step"><span class="mini-step-num">1</span><span class="mini-step-text">60 미만이면 "너무 어두움" → 박스 안에 LED를 넣으라고 알려줘요.</span></div>
+          <div class="mini-step"><span class="mini-step-num">2</span><span class="mini-step-text">200 넘으면 "과노출" → 빛이 새거나 너무 밝은 거예요.</span></div>
+          <div class="mini-step"><span class="mini-step-num">3</span><span class="mini-step-text">60~200 사이면 적당해요. 👍</span></div>
+        </div>
+        <div class="analogy-box"><div class="analogy-icon">🔦</div><div class="analogy-content"><div class="analogy-title">쉽게 말하면</div><p class="analogy-text">방이 너무 어두우면 사진이 흐리게 나오죠. 박스 안도 마찬가지예요. 어두우면 작은 LED 하나로 밝기를 채워주면 선명해져요.</p></div></div>
+      </div>
+    </div>
+
+    <!-- 3 -->
+    <div class="cmd-card" style="--accent:#7C3AED;">
+      <div class="cmd-head"><span class="cmd-badge">3</span><span class="cmd-emoji">📸</span><div class="cmd-name">한 장 캡처<small>지금 화면을 사진으로 저장</small></div></div>
+      <div class="cmd-terminal"><span class="prompt">$</span><code>python3 camera_quality_check.py --device /dev/video1</code><button class="copy-btn" data-cmd="python3 camera_quality_check.py --device /dev/video1">📋 복사</button></div>
+      <div class="cmd-body">
+        <div class="cmd-result-label">▶ 이렇게 하면</div>
+        <p class="big-easy"><strong>capture 폴더</strong>에 사진 한 장이 저장돼요.</p>
+        <div class="mini-steps">
+          <div class="mini-step"><span class="mini-step-num">1</span><span class="mini-step-text">처음 몇 장은 버리고(자동 밝기 조정 시간) 안정된 한 장을 저장해요.</span></div>
+          <div class="mini-step"><span class="mini-step-num">2</span><span class="mini-step-text">해상도를 바꿔 캡처: <code>--size 1280x720</code> 를 붙이면 돼요.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4 -->
+    <div class="cmd-card" style="--accent:#D97706;">
+      <div class="cmd-head"><span class="cmd-badge">4</span><span class="cmd-emoji">🔬</span><div class="cmd-name">JPEG 품질 비교<small>60·80·95 세 장을 한 번에 캡처</small></div></div>
+      <div class="cmd-terminal"><span class="prompt">$</span><code>python3 camera_quality_check.py --device /dev/video1 --compare</code><button class="copy-btn" data-cmd="python3 camera_quality_check.py --device /dev/video1 --compare">📋 복사</button></div>
+      <div class="cmd-body">
+        <div class="cmd-result-label">▶ 이렇게 하면</div>
+        <p class="big-easy">품질 60·80·95로 <strong>세 장을 찍어 용량을 비교</strong>해줘요.</p>
+        <div class="mini-steps">
+          <div class="mini-step"><span class="mini-step-num">1</span><span class="mini-step-text">세 장을 열어 눈으로 선명도를 비교하세요.</span></div>
+          <div class="mini-step"><span class="mini-step-num">2</span><span class="mini-step-text">품질이 높을수록 선명하지만 용량(전송량)이 커져요.</span></div>
+          <div class="mini-step"><span class="mini-step-num">3</span><span class="mini-step-text">ACT 학습이 중요하면 90~95, 모니터링만 하면 80이 무난해요.</span></div>
+        </div>
+        <div class="callout callout-warning"><span class="callout-icon">⚠️</span><span class="callout-content"><strong>주의:</strong> 품질을 너무 높이면 Pi5→NUC 전송량이 커져 끊길 수 있어요. 선명도와 끊김 없음 사이에서 균형을 잡으세요.</span></div>
+      </div>
+    </div>
+
+    <!-- 5 -->
+    <div class="cmd-card" style="--accent:#059669;">
+      <div class="cmd-head"><span class="cmd-badge">5</span><span class="cmd-emoji">✅</span><div class="cmd-name">정한 값을 서버에 반영<small>실습자료 ①의 서버 파일 수정</small></div></div>
+      <div class="cmd-terminal"><span class="prompt">$</span><code>nano camera_server_pi5_v2.py   # JPEG_QUALITY 값 수정</code><button class="copy-btn" data-cmd="nano camera_server_pi5_v2.py">📋 복사</button></div>
+      <div class="cmd-body">
+        <div class="cmd-result-label">▶ 이렇게 하면</div>
+        <p class="big-easy">비교해서 고른 품질을 <strong>실제 카메라 서버에 적용</strong>해요.</p>
+        <div class="mini-steps">
+          <div class="mini-step"><span class="mini-step-num">1</span><span class="mini-step-text">파일에서 <code>JPEG_QUALITY = 80</code> 줄을 찾아 원하는 값으로 바꿔요.</span></div>
+          <div class="mini-step"><span class="mini-step-num">2</span><span class="mini-step-text">해상도를 바꾸려면 <code>WIDTH</code>·<code>HEIGHT</code> 값도 함께 수정해요.</span></div>
+          <div class="mini-step"><span class="mini-step-num">3</span><span class="mini-step-text">저장 후 서버를 다시 켜면 새 화질로 영상이 나와요.</span></div>
+        </div>
+        <div class="callout callout-tip"><span class="callout-icon">💡</span><span class="callout-content"><strong>팁:</strong> 박스 안이 어두웠다면 LED를 넣는 게 품질 올리기보다 효과가 커요. 주광색(하얀색) LED를 카메라 옆에 달면 ACT용으로는 거의 완벽해져요.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="background:#fff;">
+  <div class="container">
+    <h2 class="section-title">🧪 선명도가 떨어질 때 점검표</h2>
+    <table class="info-table">
+      <tr><th>증상</th><th>원인</th><th>해결</th></tr>
+      <tr><td>화면이 어둡고 흐림</td><td>박스 안 빛 부족</td><td>박스 안에 주광색 LED 설치</td></tr>
+      <tr><td>가까운 게 흐림</td><td>고정초점 렌즈</td><td>렌즈 초점링을 박스 거리에 맞게 조정</td></tr>
+      <tr><td>전체적으로 뭉개짐</td><td>JPEG 품질 낮음</td><td><code>JPEG_QUALITY</code> 90~95로 상향</td></tr>
+      <tr><td>영상이 자주 끊김</td><td>전송량 과다</td><td>품질·해상도 낮추거나 FPS 줄이기</td></tr>
+    </table>
+  </div>
+</section>
+
+<script>
+  document.querySelectorAll('.copy-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var cmd = btn.getAttribute('data-cmd');
+      var done = function () {
+        var original = btn.innerHTML;
+        btn.innerHTML = '✅ 복사됨'; btn.classList.add('copied');
+        setTimeout(function () { btn.innerHTML = original; btn.classList.remove('copied'); }, 1500);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(cmd).then(done).catch(function () { fallbackCopy(cmd, done); });
+      } else { fallbackCopy(cmd, done); }
+    });
+  });
+  function fallbackCopy(text, done) {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta); done();
+  }
+</script>
+</body>
+</html>

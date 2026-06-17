@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>공장 관제센터 — NUC 통합 모니터링</title>
+<!--
+  ============================================================
+  템플릿 1 · 관제형 (FACTORY CONTROL ROOM) — 샘플
+  ------------------------------------------------------------
+  ★ "이런 형태로 만들면 된다"를 보여주는 공장 관제실 샘플입니다 ★
+  - 실제 영상이 나오는 카메라 = 백엔드 /api/cameras 의 것들(웹캠2 + IP1).
+  - 나머지 구역(B라인/포장/창고 등) = "공장엔 카메라가 많다"를 보여주는 데모 셀(영상 없음).
+    팀이 실제 카메라를 더 연결하면 데모 자리에 채우면 됩니다.
+  - 백엔드(nuc_monitor_server.py)는 건드리지 말고, 이 파일 디자인만 바꾸세요.
+  ★ 팀 커스터마이징 포인트는 [TEAM] 주석을 찾으세요.
+  ============================================================
+-->
+<style>
+  /* [TEAM] 색 테마 */
+  :root{
+    --bg:#070b16; --panel:#0e1626; --panel2:#121d33; --line:#1f2d4a;
+    --text:#e8eefc; --muted:#7e92b8; --accent:#22d3ee; --accent2:#38bdf8;
+    --live:#22c55e; --warn:#f59e0b; --off:#475569; --danger:#ef4444;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,'Noto Sans KR',sans-serif;background:
+    radial-gradient(1200px 600px at 70% -10%, #0d1730 0%, transparent 60%), var(--bg);
+    color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+
+  .topbar{display:flex;align-items:center;gap:14px;padding:11px 18px;
+    background:linear-gradient(180deg,#0e1626,#0b1220);border-bottom:1px solid var(--line)}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.5px}
+  .brand .logo{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#0ea5e9,#22d3ee);
+    display:flex;align-items:center;justify-content:center;font-size:17px}
+  .brand small{display:block;font-weight:400;font-size:11px;color:var(--muted);letter-spacing:0}
+  .clock{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--accent)}
+  .sys{display:flex;gap:14px;font-size:12px;color:var(--muted)}
+  .sys b{color:var(--live)}
+  .home{color:var(--muted);text-decoration:none;font-size:13px;border:1px solid var(--line);padding:5px 11px;border-radius:8px}
+
+  .layout{flex:1;display:grid;grid-template-columns:230px 1fr 230px;gap:12px;padding:12px}
+
+  .side{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+  .side h3{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;padding:12px 14px 8px}
+  .zone{padding:0 8px 10px;overflow-y:auto}
+  .zone-title{font-size:12px;color:var(--accent2);padding:10px 8px 4px;font-weight:700}
+  .cam-item{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;cursor:pointer;font-size:12.5px;transition:background .12s}
+  .cam-item:hover{background:var(--panel2)}
+  .cam-item.active{background:linear-gradient(90deg,rgba(34,211,238,.18),transparent);box-shadow:inset 2px 0 0 var(--accent)}
+  .st-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .st-live{background:var(--live);box-shadow:0 0 6px var(--live)}
+  .st-off{background:var(--off)} .st-warn{background:var(--warn);box-shadow:0 0 6px var(--warn)}
+  .cam-item .nm{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cam-item .rec{font-size:9px;color:var(--danger)}
+
+  .center{display:flex;flex-direction:column;gap:12px;min-width:0}
+
+  /* [TEAM] 중앙 메인 = 화려한 3D 패널 */
+  .stage3d{flex:1;min-height:320px;perspective:1400px;display:flex;align-items:center;justify-content:center;padding:6px}
+  .main{position:relative;width:100%;height:100%;min-height:320px;background:#000;border-radius:16px;overflow:hidden;
+    transform-style:preserve-3d;transform:rotateX(4deg) rotateY(-5deg);
+    transition:transform .25s ease;
+    border:1px solid var(--line);
+    box-shadow:
+      0 40px 70px -20px rgba(0,0,0,.85),
+      0 0 0 1px rgba(56,189,248,.25),
+      0 0 40px rgba(34,211,238,.18),
+      inset 0 1px 0 rgba(255,255,255,.08);}
+  .stage3d:hover .main{transform:rotateX(0deg) rotateY(0deg) scale(1.005)}
+  /* 패널 가장자리 네온 프레임 */
+  .main::before{content:'';position:absolute;inset:0;border-radius:16px;padding:1px;
+    background:linear-gradient(135deg,rgba(56,189,248,.6),transparent 40%,transparent 60%,rgba(129,140,248,.6));
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;z-index:3}
+  /* 빛 스윕 */
+  .main .sweep{position:absolute;top:0;bottom:0;width:40%;left:-50%;z-index:2;pointer-events:none;
+    background:linear-gradient(105deg,transparent,rgba(56,189,248,.12),transparent);animation:sweep 5s linear infinite}
+  @keyframes sweep{to{left:130%}}
+  .main img{width:100%;height:100%;object-fit:contain;background:#000;position:absolute;inset:0}
+  .main .demo-fill{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;
+    background:repeating-linear-gradient(45deg,#0a1120,#0a1120 12px,#0c1426 12px,#0c1426 24px);color:#33415a;z-index:1}
+  .main .demo-fill .big{font-size:46px}
+  /* [TEAM] 전환 효과 — 카메라 바꿀 때 메인이 살짝 플립되며 나타남 */
+  .main.switching{animation:flipIn .45s cubic-bezier(.2,.8,.2,1)}
+  @keyframes flipIn{
+    0%{transform:rotateY(-22deg) scale(.96);opacity:.25;filter:brightness(1.6)}
+    60%{filter:brightness(1.1)}
+    100%{transform:rotateX(0) rotateY(0) scale(1);opacity:1;filter:none}
+  }
+  .overlay{position:absolute;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:flex-start;padding:14px;pointer-events:none;z-index:4}
+  .badge-cam{background:rgba(0,0,0,.6);padding:7px 13px;border-radius:9px;font-weight:700;font-size:14px;color:var(--accent);
+    display:flex;align-items:center;gap:8px;backdrop-filter:blur(4px)}
+  .badge-cam .live{width:8px;height:8px;border-radius:50%;background:var(--live);box-shadow:0 0 6px var(--live)}
+  .badge-rec{background:rgba(239,68,68,.22);border:1px solid var(--danger);color:#fecaca;padding:6px 11px;border-radius:8px;
+    font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;backdrop-filter:blur(4px)}
+  .badge-rec .blink{width:7px;height:7px;border-radius:50%;background:var(--danger);animation:blink 1s infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+  .crosshair{position:absolute;inset:0;pointer-events:none;opacity:.15;z-index:2}
+  .main-foot{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-between;align-items:center;
+    padding:10px 14px;background:linear-gradient(0deg,rgba(0,0,0,.75),transparent);font-size:11px;color:#9fb0d0;font-family:'JetBrains Mono',monospace;z-index:4}
+  .tools{display:flex;gap:8px}
+  .tools button{background:rgba(255,255,255,.08);border:1px solid var(--line);color:var(--text);border-radius:8px;
+    padding:6px 11px;font-size:12px;font-weight:600;cursor:pointer;backdrop-filter:blur(4px)}
+  .tools button:hover{border-color:var(--accent)}
+
+  .thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .thumb{background:var(--panel);border:2px solid var(--line);border-radius:10px;overflow:hidden;cursor:pointer;position:relative;
+    transition:border-color .12s,transform .12s,box-shadow .12s}
+  .thumb:hover{transform:translateY(-3px)}
+  .thumb.active{border-color:var(--accent);box-shadow:0 0 0 2px rgba(34,211,238,.35),0 10px 24px -8px rgba(34,211,238,.5)}
+  /* 선택 순간 펄스 */
+  .thumb.pulse{animation:thumbPulse .5s ease}
+  @keyframes thumbPulse{0%{box-shadow:0 0 0 0 rgba(34,211,238,.7)}100%{box-shadow:0 0 0 14px rgba(34,211,238,0)}}
+  .thumb img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:#000}
+  .thumb .demo{aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;font-size:22px;color:#33415a;
+    background:repeating-linear-gradient(45deg,#0a1120,#0a1120 8px,#0c1426 8px,#0c1426 16px)}
+  .thumb .cap{position:absolute;left:0;right:0;bottom:0;font-size:10px;padding:4px 6px;
+    background:linear-gradient(0deg,rgba(0,0,0,.8),transparent);display:flex;justify-content:space-between;align-items:center}
+  .thumb .stt{width:6px;height:6px;border-radius:50%}
+
+  .stats{display:flex;flex-direction:column;gap:12px}
+  .stat-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .stat-card h4{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+  .kpi{display:flex;align-items:baseline;gap:8px}
+  .kpi .n{font-size:30px;font-weight:800;font-family:'JetBrains Mono',monospace}
+  .kpi .u{font-size:12px;color:var(--muted)}
+  .kpi.live .n{color:var(--live)}
+  .legend{display:flex;flex-direction:column;gap:7px;font-size:12px;color:#bcccea}
+  .legend div{display:flex;align-items:center;gap:8px}
+  .log{font-family:'JetBrains Mono',monospace;font-size:11px;color:#9fb0d0;line-height:1.7;max-height:160px;overflow:auto}
+  .log .t{color:#5a7} .log .w{color:var(--warn)}
+
+  /* [TEAM] 반응형 — 폰: 1열로 쌓임 */
+  @media(max-width:1000px){
+    .layout{grid-template-columns:1fr}
+    .side,.stats{order:3}
+    .center{order:1}
+    .thumbs{grid-template-columns:repeat(3,1fr)}
+  }
+  @media(max-width:560px){ .thumbs{grid-template-columns:repeat(2,1fr)} }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <span class="logo">🏭</span>
+      <div>SMART FACTORY 관제센터<small>NUC 통합 모니터링 · LeKiwi</small></div>
+    </div>
+    <div class="sys"><span>가동 <b>NORMAL</b></span><span>네트워크 <b>OK</b></span></div>
+    <span class="clock" id="clock">--:--:--</span>
+    <a class="home" href="/">← 템플릿 선택</a>
+  </div>
+
+  <div class="layout">
+    <aside class="side">
+      <h3>📷 카메라 구역</h3>
+      <div class="zone" id="camTree"></div>
+    </aside>
+
+    <div class="center">
+      <div class="stage3d">
+        <div class="main" id="mainPanel">
+          <div class="sweep"></div>
+          <img id="mainImg" src="" alt="main" style="display:none">
+          <div class="demo-fill" id="mainDemo"><div class="big">🎥</div><div id="mainDemoTxt">카메라 선택</div></div>
+          <svg class="crosshair" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <line x1="50" y1="0" x2="50" y2="100" stroke="#22d3ee" stroke-width="0.2"/>
+            <line x1="0" y1="50" x2="100" y2="50" stroke="#22d3ee" stroke-width="0.2"/>
+          </svg>
+          <div class="overlay">
+            <div class="badge-cam"><span class="live"></span><span id="mainName">—</span></div>
+            <div class="badge-rec"><span class="blink"></span>REC</div>
+          </div>
+          <div class="main-foot">
+            <span id="mainMeta">CH-- · 1920×1080 · 15fps</span>
+            <span class="tools">
+              <button id="snapBtn">📸 스냅샷</button>
+              <button id="fsBtn">⛶ 전체화면</button>
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="thumbs" id="thumbs"></div>
+    </div>
+
+    <aside class="stats">
+      <div class="stat-card">
+        <h4>카메라 상태</h4>
+        <div class="kpi live"><span class="n" id="cntLive">0</span><span class="u">대 정상 (LIVE)</span></div>
+        <div style="height:8px"></div>
+        <div class="legend">
+          <div><span class="st-dot st-live"></span> 정상 송출</div>
+          <div><span class="st-dot st-warn"></span> 점검 필요</div>
+          <div><span class="st-dot st-off"></span> 오프라인 / 미연결</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <h4>구역 요약</h4>
+        <div class="kpi"><span class="n" id="cntTotal">0</span><span class="u">대 / 5개 구역</span></div>
+      </div>
+      <div class="stat-card">
+        <h4>이벤트 로그</h4>
+        <div class="log" id="log"></div>
+      </div>
+    </aside>
+  </div>
+
+<script>
+// ============================================================
+//  [TEAM] 공장 카메라 구역 정의 (샘플)
+//  - 백엔드 /api/cameras 에 있는 이름(front/top/ipcam1)은 자동으로 "실제 영상"으로 처리됩니다.
+//  - 'demo_*' 는 "공장엔 카메라가 많다"를 보여주는 데모 셀(영상 없음)입니다.
+//  - 카메라를 더 연결하면 백엔드 CAMERAS에 추가하고, 여기 key를 그 이름으로 바꾸면 실제 영상이 나옵니다.
+// ============================================================
+var ZONES = [
+  { zone:'🚪 입구 / 외곽', cams:[
+      { key:'ipcam1', label:'정문 입구 (IP)', st:'live' },
+      { key:'demo_gate2', label:'후문 출입구', st:'live' },
+      { key:'demo_yard', label:'외곽 야적장', st:'warn' } ]},
+  { zone:'⚙️ A 생산라인', cams:[
+      { key:'front', label:'A라인 로봇 전방', st:'live' },
+      { key:'top', label:'A라인 상부 뷰', st:'live' },
+      { key:'demo_a3', label:'A라인 컨베이어', st:'live' } ]},
+  { zone:'🔩 B 생산라인', cams:[
+      { key:'demo_b1', label:'B라인 투입부', st:'live' },
+      { key:'demo_b2', label:'B라인 조립셀', st:'off' } ]},
+  { zone:'📦 포장 / 출고', cams:[
+      { key:'demo_pack1', label:'포장기 #1', st:'live' },
+      { key:'demo_ship', label:'출고 도크', st:'live' } ]},
+  { zone:'🏗️ 창고', cams:[
+      { key:'demo_wh1', label:'자재 창고 A', st:'live' },
+      { key:'demo_wh2', label:'완제품 창고', st:'warn' } ]},
+];
+
+var realSet = {}, current = null, chCounter = 1;
+
+function camDom(cam){
+  var item = document.createElement('div');
+  item.className = 'cam-item'; item.dataset.key = cam.key;
+  var s = cam.st==='live'?'st-live':(cam.st==='warn'?'st-warn':'st-off');
+  item.innerHTML = '<span class="st-dot '+s+'"></span><span class="nm">'+cam.ch+'. '+cam.label+'</span>'+(cam.real?'<span class="rec">●REC</span>':'');
+  item.addEventListener('click', function(){ selectCam(cam); });
+  return item;
+}
+function selectCam(cam){
+  current = cam;
+  var img = document.getElementById('mainImg'), demo = document.getElementById('mainDemo');
+  if(cam.real){ img.src='/stream/'+cam.key; img.style.display='block'; demo.style.display='none'; }
+  else{ img.style.display='none'; demo.style.display='flex'; document.getElementById('mainDemoTxt').textContent = cam.label+' · 데모(미연결)'; }
+  document.getElementById('mainName').textContent = cam.label;
+  document.getElementById('mainMeta').textContent = 'CH'+String(cam.ch).padStart(2,'0')+' · 1920×1080 · 15fps · '+(cam.real?'LIVE':'DEMO');
+  document.querySelectorAll('.cam-item').forEach(function(el){ el.classList.toggle('active', el.dataset.key===cam.key); });
+  document.querySelectorAll('.thumb').forEach(function(el){
+    var on = el.dataset.key===cam.key;
+    el.classList.toggle('active', on);
+    if(on){ el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse'); }  // 선택 펄스
+  });
+  // 메인 패널 3D 전환 효과 재생
+  var panel=document.getElementById('mainPanel');
+  panel.classList.remove('switching'); void panel.offsetWidth; panel.classList.add('switching');
+}
+function thumbDom(cam){
+  var d = document.createElement('div'); d.className='thumb'; d.dataset.key=cam.key;
+  var s = cam.st==='live'?'st-live':(cam.st==='warn'?'st-warn':'st-off');
+  d.innerHTML = (cam.real?'<img src="/stream/'+cam.key+'" alt="'+cam.label+'">':'<div class="demo">🎥</div>')+
+    '<div class="cap"><span>'+cam.label+'</span><span class="stt '+s+'"></span></div>';
+  d.addEventListener('click', function(){ selectCam(cam); });
+  return d;
+}
+function build(){
+  var tree=document.getElementById('camTree'), thumbs=document.getElementById('thumbs'), all=[];
+  ZONES.forEach(function(z){
+    var zt=document.createElement('div'); zt.className='zone-title'; zt.textContent=z.zone; tree.appendChild(zt);
+    z.cams.forEach(function(c){ c.ch=chCounter++; c.real=!!realSet[c.key]; tree.appendChild(camDom(c)); all.push(c); });
+  });
+  all.slice(0,8).forEach(function(c){ thumbs.appendChild(thumbDom(c)); });
+  document.getElementById('cntLive').textContent = all.filter(function(c){return c.st==='live';}).length;
+  document.getElementById('cntTotal').textContent = all.length;
+  selectCam(all.find(function(c){return c.real;}) || all[0]);
+}
+fetch('/api/cameras').then(function(r){return r.json();}).then(function(list){
+  list.forEach(function(c){ realSet[c.name]=true; });
+  build();
+  var log=document.getElementById('log');
+  list.forEach(function(c){ log.innerHTML += '<div><span class="t">['+now()+']</span> '+c.name+' 연결됨</div>'; });
+}).catch(function(){ build(); });
+
+document.getElementById('snapBtn').addEventListener('click', function(){
+  if(!current) return;
+  if(!current.real){ pushLog(current.label+' 데모는 저장 불가', true); return; }
+  fetch('/snapshot/'+current.key).then(function(r){return r.json();}).then(function(j){
+    pushLog(j.ok ? (current.label+' 스냅샷 저장') : ('저장 실패: '+j.error), !j.ok);
+  });
+});
+document.getElementById('fsBtn').addEventListener('click', function(){
+  var el=document.getElementById('mainPanel'); if(el.requestFullscreen) el.requestFullscreen();
+});
+function now(){ return new Date().toTimeString().slice(0,8); }
+function pushLog(msg,w){ var log=document.getElementById('log'); log.innerHTML='<div><span class="'+(w?'w':'t')+'">['+now()+']</span> '+msg+'</div>'+log.innerHTML; }
+setInterval(function(){ document.getElementById('clock').textContent=now(); },1000);
+</script>
+</body>
+</html>

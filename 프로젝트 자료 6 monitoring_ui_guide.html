@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>실습 가이드 monitoring ui - NUC 통합 모니터링 화면 (Flask·템플릿 2종)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --color-primary: #2563EB;
+    --color-primary-light: #DBEAFE;
+    --color-secondary: #7C3AED;
+    --color-secondary-light: #EDE9FE;
+    --color-success: #059669;
+    --color-success-light: #D1FAE5;
+    --color-warning: #D97706;
+    --color-warning-light: #FEF3C7;
+    --color-danger: #DC2626;
+    --color-danger-light: #FEE2E2;
+    --color-surface: #F8FAFC;
+    --color-card: #FFFFFF;
+    --color-text: #1E293B;
+    --color-muted: #64748B;
+    --color-border: #E2E8F0;
+  }
+  body { font-family: 'Noto Sans KR', sans-serif; color: var(--color-text);
+    background: var(--color-surface); line-height: 1.75; -webkit-font-smoothing: antialiased; }
+  code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+  .container { max-width: 920px; margin: 0 auto; padding: 0 1.5rem; }
+  section { padding: 3rem 0; }
+  .section-title { font-size: 1.85rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .section-lead { color: var(--color-muted); margin-bottom: 2rem; }
+
+  .hero { background: linear-gradient(135deg, #0F172A 0%, #1E3A8A 55%, #2563EB 100%);
+    color: white; padding: 4rem 0 3.25rem; position: relative; overflow: hidden; }
+  .hero::after { content: '📹'; position: absolute; font-size: 13rem; right: 2%; top: 50%;
+    transform: translateY(-50%); opacity: 0.08; }
+  .hero .container { position: relative; z-index: 1; }
+  .hero-tags { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+  .pill { background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.32);
+    padding: 0.32rem 0.9rem; border-radius: 999px; font-size: 0.8rem; font-weight: 500;
+    backdrop-filter: blur(8px); }
+  .hero-eyebrow { font-size: 0.82rem; font-weight: 700; letter-spacing: 0.12em; opacity: 0.9; margin-bottom: 0.5rem; }
+  .hero h1 { font-size: 2.5rem; font-weight: 900; line-height: 1.2; }
+  .hero-subtitle { font-size: 1.12rem; margin-top: 0.9rem; opacity: 0.95; max-width: 730px; }
+  .hero-meta { margin-top: 1.6rem; display: flex; gap: 1.4rem; flex-wrap: wrap; font-size: 0.88rem; opacity: 0.95; }
+
+  .start-box { background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%); border-radius: 16px;
+    padding: 1.6rem 1.9rem; margin-bottom: 2rem; border: 1px solid #BFDBFE; }
+  .start-box-title { font-weight: 700; color: #1E3A8A; font-size: 1.12rem; margin-bottom: 0.6rem;
+    display: flex; align-items: center; gap: 0.5rem; }
+  .start-box p, .start-box li { font-size: 0.95rem; line-height: 1.7; color: #1E3A8A; }
+  .start-box ul { margin: 0.6rem 0 0 1.4rem; }
+
+  .flow-diagram { display: flex; align-items: center; justify-content: flex-start; gap: 0.45rem;
+    padding: 1.5rem 1rem; background: var(--color-card); border: 1px solid var(--color-border);
+    border-radius: 16px; overflow-x: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+  .flow-node { background: var(--color-card); border: 2px solid var(--node-color, var(--color-primary));
+    border-radius: 12px; padding: 1rem 0.9rem; text-align: center; min-width: 120px; flex-shrink: 0;
+    transition: transform 0.2s, box-shadow 0.2s; }
+  .flow-node:hover { transform: translateY(-4px); box-shadow: 0 8px 25px rgba(0,0,0,0.12); }
+  .flow-node-icon { font-size: 1.7rem; margin-bottom: 0.35rem; }
+  .flow-node-title { font-weight: 700; font-size: 0.86rem; }
+  .flow-node-desc { font-size: 0.74rem; color: var(--color-muted); margin-top: 0.2rem; }
+  .flow-arrow { flex-shrink: 0; }
+
+  .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-top: 1rem; }
+  .type-card { border-radius: 16px; overflow: hidden; border: 1px solid var(--color-border);
+    background: var(--color-card); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.08); }
+  .type-card-head { padding: 1.1rem 1.4rem; color: white; }
+  .t-control .type-card-head { background: linear-gradient(135deg,#0F172A,#1E3A8A); }
+  .t-cards .type-card-head { background: linear-gradient(135deg,#312E81,#7C3AED); }
+  .type-card-head .t { font-size: 1.15rem; font-weight: 800; }
+  .type-card-head .s { font-size: 0.82rem; opacity: 0.9; margin-top: 0.15rem; }
+  .type-card-body { padding: 1.25rem 1.4rem; }
+  .type-card-body ul { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+  .type-card-body li { font-size: 0.9rem; padding-left: 1.5rem; position: relative; }
+  .type-card-body li::before { position: absolute; left: 0; top: 0; content: '▸'; color: var(--color-muted); }
+  .type-card-body li.good::before { content: '✅'; }
+  .type-card-body .url { margin-top: 0.9rem; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;
+    background: var(--color-surface); padding: 0.5rem 0.7rem; border-radius: 7px; color: var(--color-primary); }
+
+  .cmd-card { background: var(--color-card); border: 1px solid var(--color-border); border-radius: 16px;
+    overflow: hidden; margin-bottom: 2rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.08); }
+  .cmd-head { display: flex; align-items: center; gap: 0.85rem; padding: 1.1rem 1.5rem; color: white;
+    background: var(--accent, var(--color-primary)); }
+  .cmd-badge { flex-shrink: 0; width: 2.1rem; height: 2.1rem; border-radius: 50%;
+    background: rgba(255,255,255,0.25); border: 2px solid rgba(255,255,255,0.6); display: flex;
+    align-items: center; justify-content: center; font-weight: 900; font-size: 1.05rem; }
+  .cmd-emoji { font-size: 1.7rem; }
+  .cmd-name { font-weight: 700; font-size: 1.15rem; }
+  .cmd-name small { display:block; font-weight:400; font-size:0.8rem; opacity:0.85; margin-top:0.1rem; }
+  .cmd-terminal { background: #0F172A; color: #E2E8F0; padding: 1.05rem 1.5rem; font-size: 0.92rem;
+    display: flex; align-items: center; gap: 0.6rem; overflow-x: auto; font-family: 'JetBrains Mono', monospace; }
+  .cmd-terminal .prompt { color: #4ADE80; user-select: none; }
+  .cmd-terminal code { white-space: nowrap; flex: 1; }
+  .copy-btn { flex-shrink: 0; margin-left: auto; background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.25); color: #E2E8F0; border-radius: 8px; padding: 0.35rem 0.75rem;
+    font-size: 0.8rem; font-family: 'Noto Sans KR', sans-serif; font-weight: 500; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 0.35rem; transition: background 0.15s; }
+  .copy-btn:hover { background: rgba(255,255,255,0.22); }
+  .copy-btn.copied { background: var(--color-success); border-color: var(--color-success); color: white; }
+  .cmd-body { padding: 1.5rem; }
+  .cmd-result-label { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.78rem;
+    font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--accent, var(--color-primary)); margin-bottom: 0.6rem; }
+  .big-easy { font-size: 1.05rem; font-weight: 500; }
+  .mini-steps { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 1rem; }
+  .mini-step { display: flex; gap: 0.75rem; align-items: flex-start; background: var(--color-surface);
+    border-radius: 10px; padding: 0.75rem 1rem; }
+  .mini-step-num { flex-shrink: 0; width: 1.6rem; height: 1.6rem; border-radius: 50%;
+    background: var(--accent, var(--color-primary)); color: white; display: flex; align-items: center;
+    justify-content: center; font-size: 0.85rem; font-weight: 700; }
+  .mini-step-text { font-size: 0.92rem; }
+
+  .analogy-box { display: flex; gap: 1.1rem; padding: 1.2rem; background: var(--color-secondary-light);
+    border-radius: 12px; border-left: 4px solid var(--color-secondary); margin-top: 1rem; }
+  .analogy-icon { font-size: 2rem; flex-shrink: 0; }
+  .analogy-title { font-weight: 700; font-size: 0.8rem; color: var(--color-secondary);
+    text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem; }
+  .analogy-text { line-height: 1.65; font-size: 0.95rem; }
+  .callout { display: flex; gap: 0.75rem; padding: 1rem 1.25rem; border-radius: 10px;
+    align-items: flex-start; margin-top: 1.5rem; }
+  .callout-icon { font-size: 1.25rem; flex-shrink: 0; }
+  .callout-content { font-size: 0.95rem; line-height: 1.6; }
+  .callout-tip { background: var(--color-success-light); border-left: 3px solid var(--color-success); }
+  .callout-warning { background: var(--color-warning-light); border-left: 3px solid var(--color-warning); }
+  .callout-info { background: var(--color-primary-light); border-left: 3px solid var(--color-primary); }
+
+  .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--color-border); margin-top: 1rem; }
+  table { width: 100%; border-collapse: collapse; background: var(--color-card); font-size: 0.9rem; }
+  th, td { padding: 0.8rem 1rem; text-align: left; border-bottom: 1px solid var(--color-border); }
+  th { background: var(--color-surface); font-weight: 700; }
+  td code { background: var(--color-surface); padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.85rem; }
+
+  .checklist { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 1rem; }
+  .checklist-item { display: flex; gap: 0.75rem; align-items: flex-start; background: var(--color-card);
+    border: 1px solid var(--color-border); border-radius: 10px; padding: 0.85rem 1.1rem; }
+  .checklist-box { flex-shrink: 0; width: 1.3rem; height: 1.3rem; border-radius: 5px;
+    border: 2px solid var(--color-primary); margin-top: 0.15rem; }
+
+  pre.block { background: #0F172A; color: #E2E8F0; border-radius: 12px; padding: 1.1rem 1.3rem;
+    overflow-x: auto; font-size: 0.84rem; line-height: 1.6; margin-top: 1rem; }
+  pre.block .cm { color: #64748B; }
+  pre.block .st { color: #86EFAC; }
+  pre.block .kw { color: #7DD3FC; }
+
+  .tree { background: #0F172A; color: #E2E8F0; border-radius: 12px; padding: 1.1rem 1.3rem;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.84rem; line-height: 1.7; margin-top: 1rem; }
+  .tree .dir { color: #7DD3FC; }
+  .tree .keep { color: #86EFAC; }
+  .tree .edit { color: #FCD34D; }
+  .tree .note { color: #64748B; }
+
+  .footer { background: #0F172A; color: #94A3B8; padding: 2.5rem 0; text-align: center; font-size: 0.85rem; }
+
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 2rem; }
+    .flow-diagram { flex-direction: column; }
+    .flow-arrow svg { transform: rotate(90deg); }
+    .type-grid { grid-template-columns: 1fr; }
+  }
+  @media print { .copy-btn { display: none; } .hero { background: white !important; color: black !important; }
+    .cmd-head { color: black !important; -webkit-print-color-adjust: exact; } }
+</style>
+</head>
+<body>
+
+<!-- ===== 히어로 ===== -->
+<header class="hero">
+  <div class="container">
+    <div class="hero-tags">
+      <span class="pill">Flask</span>
+      <span class="pill">템플릿 2종</span>
+      <span class="pill">반응형</span>
+      <span class="pill">폰·PC 발표</span>
+    </div>
+    <div class="hero-eyebrow">실습 가이드 · NUC 통합 모니터링 화면</div>
+    <h1>모니터링 화면 만들기<br>템플릿을 골라 우리 팀 스타일로</h1>
+    <p class="hero-subtitle">
+      카메라 서버는 그대로 두고, NUC에서 <strong>Flask 모니터링 화면</strong>을 띄웁니다.
+      <strong>관제센터형·카드형 두 템플릿</strong>을 출발점으로 팀이 디자인을 입히고,
+      완성한 화면을 <strong>폰이나 PC로 발표</strong>해요.
+    </p>
+    <div class="hero-meta">
+      <span>🖥️ 백엔드: NUC (공통)</span>
+      <span>🎨 화면: 템플릿 2종 (팀이 꾸밈)</span>
+      <span>📱 발표: 폰·PC 접속</span>
+    </div>
+  </div>
+</header>
+
+<!-- ===== 목표 ===== -->
+<section>
+  <div class="container">
+    <h2 class="section-title">🎯 이 실습의 목표 — 프로젝트 과제</h2>
+    <p class="section-lead">정해진 정답을 따라 만드는 게 아니라, 템플릿을 골라 <strong>팀만의 화면</strong>을 완성하는 프로젝트예요.</p>
+
+    <div class="start-box">
+      <div class="start-box-title">📌 무엇을 건드리고, 무엇을 건드리지 않나</div>
+      <ul>
+        <li><strong>그대로 둠 (건드리지 않음):</strong> 라즈베리파이의 카메라 서버(<code>camera_server_pi5_v2.py</code>), 기존 NUC 수신, IP 카메라 연결 — <u>전부 유지</u></li>
+        <li><strong>새로 실행:</strong> NUC에서 <strong>Flask 모니터링 서버</strong>(<code>nuc_monitor_server.py</code>) 하나 — 카메라 영상을 모아 화면으로 제공</li>
+        <li><strong>팀이 꾸밈:</strong> <code>templates/</code> 폴더의 화면 HTML 2종 — 색·배치·기능을 자유롭게 디자인</li>
+      </ul>
+    </div>
+
+    <div class="analogy-box">
+      <div class="analogy-icon">🎨</div>
+      <div class="analogy-content">
+        <div class="analogy-title">쉽게 말하면</div>
+        <p class="analogy-text">
+          백엔드(서버)는 <strong>재료를 대주는 주방</strong>이고, 템플릿은 <strong>접시에 담는 방식</strong>이에요.
+          재료(카메라 영상)는 똑같지만, 어떻게 차려내느냐는 팀마다 달라요. 두 개의 기본 접시(템플릿)를 줄 테니
+          거기서 시작해 우리 팀 색으로 꾸미면 됩니다.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 한눈에 보기 ===== -->
+<section style="background:var(--color-card);border-top:1px solid var(--color-border);border-bottom:1px solid var(--color-border);">
+  <div class="container">
+    <h2 class="section-title">한눈에 보기 — 백엔드는 공통, 화면만 갈림</h2>
+    <p class="section-lead">카메라 영상이 NUC 백엔드로 모이고, 그 위에 팀이 고른 템플릿이 얹혀요.</p>
+    <div class="flow-diagram">
+      <div class="flow-node" style="--node-color:#059669">
+        <div class="flow-node-icon">📷</div>
+        <div class="flow-node-title">Pi5 웹캠 2개</div>
+        <div class="flow-node-desc">폐쇄망 8000/8001</div>
+      </div>
+      <div class="flow-arrow"><svg width="34" height="24" viewBox="0 0 40 24"><path d="M0 12h30M24 4l8 8-8 8" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+      <div class="flow-node" style="--node-color:#2563EB">
+        <div class="flow-node-icon">🖥️</div>
+        <div class="flow-node-title">NUC Flask 백엔드</div>
+        <div class="flow-node-desc">/stream · /api (공통)</div>
+      </div>
+      <div class="flow-arrow"><svg width="34" height="24" viewBox="0 0 40 24"><path d="M0 12h30M24 4l8 8-8 8" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+      <div class="flow-node" style="--node-color:#7C3AED">
+        <div class="flow-node-icon">🎨</div>
+        <div class="flow-node-title">템플릿 2종</div>
+        <div class="flow-node-desc">팀이 꾸밈</div>
+      </div>
+      <div class="flow-arrow"><svg width="34" height="24" viewBox="0 0 40 24"><path d="M0 12h30M24 4l8 8-8 8" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+      <div class="flow-node" style="--node-color:#D97706">
+        <div class="flow-node-icon">📱</div>
+        <div class="flow-node-title">폰·PC 발표</div>
+        <div class="flow-node-desc">URL 접속</div>
+      </div>
+      <div class="flow-arrow" style="margin:0 0.2rem;"><span style="color:#94A3B8;font-size:0.8rem;">▲</span></div>
+      <div class="flow-node" style="--node-color:#D97706">
+        <div class="flow-node-icon">📹</div>
+        <div class="flow-node-title">IP 카메라</div>
+        <div class="flow-node-desc">NUC 직결</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 실행 원리 ===== -->
+<section>
+  <div class="container">
+    <h2 class="section-title">⚙️ 먼저 이해하기 — "서버 켜기"와 "화면 보기"는 다른 일</h2>
+    <p class="section-lead">터미널에서 실행하면 영상 창이 뜨는 게 아니에요. 헷갈리기 쉬우니 먼저 짚고 가요.</p>
+
+    <div class="start-box">
+      <div class="start-box-title">🤔 "실행했는데 아무것도 안 나와요"</div>
+      <p>
+        <code>python3 nuc_monitor_server.py</code> 는 <strong>서버를 켜는</strong> 명령이에요.
+        창에 영상이 뜨는 게 아니라, "이제 접속을 받을 준비 완료" 상태로 <strong>터미널이 계속 떠 있는 게 정상</strong>이에요.
+        화면은 <strong>브라우저로 따로</strong> 봅니다.
+      </p>
+    </div>
+
+    <div class="analogy-box">
+      <div class="analogy-icon">📺</div>
+      <div class="analogy-content">
+        <div class="analogy-title">쉽게 말하면</div>
+        <p class="analogy-text">
+          서버를 켜는 건 <strong>방송국 송출을 시작</strong>하는 거예요. 송출만 한다고 내 눈앞에 화면이 뜨진 않죠.
+          화면을 보려면 <strong>TV(브라우저)를 켜서 채널(주소)을 맞춰야</strong> 해요.
+          그래서 터미널 창은 <u>끄지 말고 그대로 둔 채</u>, 브라우저를 따로 엽니다.
+        </p>
+      </div>
+    </div>
+
+    <div class="flow-diagram" style="margin-top:1.5rem;">
+      <div class="flow-node" style="--node-color:#2563EB">
+        <div class="flow-node-icon">⌨️</div>
+        <div class="flow-node-title">① 터미널</div>
+        <div class="flow-node-desc">서버 켜기<br>(계속 떠 있음)</div>
+      </div>
+      <div class="flow-arrow"><svg width="34" height="24" viewBox="0 0 40 24"><path d="M0 12h30M24 4l8 8-8 8" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+      <div class="flow-node" style="--node-color:#059669">
+        <div class="flow-node-icon">🌐</div>
+        <div class="flow-node-title">② 브라우저</div>
+        <div class="flow-node-desc">주소 접속<br>http://NUC:8080</div>
+      </div>
+      <div class="flow-arrow"><svg width="34" height="24" viewBox="0 0 40 24"><path d="M0 12h30M24 4l8 8-8 8" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+      <div class="flow-node" style="--node-color:#7C3AED">
+        <div class="flow-node-icon">📹</div>
+        <div class="flow-node-title">③ 화면</div>
+        <div class="flow-node-desc">영상이 나옴</div>
+      </div>
+    </div>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">💡</span>
+      <span class="callout-content">
+        <strong>"인덱스(index.html)는 백에서 도는 건가요?" → 맞아요.</strong>
+        <code>index.html</code>은 더블클릭해 여는 파일이 아니라, <strong>서버가 떠 있을 때 브라우저가 <code>/</code>로 요청하면 서버가 내려주는</strong> 화면이에요.
+        영상(<code>/stream/...</code>)도 서버가 살아 있어야 흘러나와요. 서버가 꺼져 있으면 화면을 열어도 영상이 안 나옵니다.
+      </span>
+    </div>
+
+    <div class="callout callout-warning">
+      <span class="callout-icon">⚠️</span>
+      <span class="callout-content"><strong>주의:</strong> 서버를 켠 터미널 창을 닫으면 서버도 꺼져요. 발표하는 동안에는 <strong>터미널을 계속 열어둔 채</strong> 브라우저로 보세요.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 파일 구조 ===== -->
+<section>
+  <div class="container">
+    <h2 class="section-title">📁 파일 구조 — 어디를 고치나</h2>
+    <p class="section-lead">백엔드는 1개, 화면 템플릿은 <code>templates/</code> 안에 있어요. 팀은 노란색만 고치면 돼요.</p>
+    <div class="tree">
+nuc_monitor_server.py        <span class="note"># 백엔드 (공통) — 고치지 않음</span>
+templates/
+├── index.html               <span class="edit"># 템플릿 고르는 시작 페이지 (선택사항)</span>
+├── <span class="edit">template_control.html</span>     <span class="edit"># 템플릿 1 · 관제센터형 ← 팀이 꾸밈</span>
+└── <span class="edit">template_cards.html</span>       <span class="edit"># 템플릿 2 · 카드형     ← 팀이 꾸밈</span>
+    </div>
+    <div class="callout callout-info">
+      <span class="callout-icon">🧩</span>
+      <span class="callout-content">템플릿 안의 <code>[TEAM]</code> 주석을 찾으면, 색·배치·기능을 어디서 고치는지 표시돼 있어요.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 두 템플릿 비교 ===== -->
+<section style="background:var(--color-surface);">
+  <div class="container">
+    <h2 class="section-title">🎨 두 가지 템플릿 — 공장 운영 화면 샘플</h2>
+    <p class="section-lead">실제 공장처럼 꾸민 샘플이에요. <strong>진짜 영상이 나오는 카메라는 3대</strong>(웹캠2+IP1)이고, 나머지 구역(B라인·포장·창고 등)은 "공장엔 카메라가 많다"를 보여주는 <strong>데모 셀</strong>이에요. 팀이 이 형태에서 출발해 우리 공장에 맞게 꾸밉니다.</p>
+
+    <div class="type-grid">
+      <div class="type-card t-control">
+        <div class="type-card-head">
+          <div class="t">🛰️ 관제센터형</div>
+          <div class="s">큰 메인 1개 + 사이드 썸네일</div>
+        </div>
+        <!-- 레이아웃 미리보기 (공장 관제실 3열) -->
+        <svg viewBox="0 0 320 200" style="display:block;width:100%;background:#070b16;">
+          <rect x="0" y="0" width="320" height="20" fill="#0e1626"/>
+          <rect x="8" y="6" width="8" height="8" rx="2" fill="#22d3ee"/>
+          <rect x="20" y="7" width="80" height="6" rx="3" fill="#1f2d4a"/>
+          <rect x="250" y="6" width="40" height="8" rx="2" fill="#0d2030"/>
+          <!-- 좌: 카메라 트리 -->
+          <rect x="6" y="26" width="74" height="168" rx="5" fill="#0e1626" stroke="#1f2d4a"/>
+          <text x="12" y="40" font-size="7" fill="#38bdf8" font-family="monospace">입구/외곽</text>
+          <circle cx="14" cy="49" r="2" fill="#22c55e"/><rect x="20" y="46" width="50" height="4" rx="2" fill="#1f2d4a"/>
+          <circle cx="14" cy="59" r="2" fill="#22c55e"/><rect x="20" y="56" width="50" height="4" rx="2" fill="#1f2d4a"/>
+          <text x="12" y="76" font-size="7" fill="#38bdf8" font-family="monospace">A 라인</text>
+          <circle cx="14" cy="85" r="2" fill="#22c55e"/><rect x="20" y="82" width="50" height="4" rx="2" fill="#22d3ee"/>
+          <circle cx="14" cy="95" r="2" fill="#22c55e"/><rect x="20" y="92" width="50" height="4" rx="2" fill="#1f2d4a"/>
+          <text x="12" y="112" font-size="7" fill="#38bdf8" font-family="monospace">B 라인</text>
+          <circle cx="14" cy="121" r="2" fill="#475569"/><rect x="20" y="118" width="50" height="4" rx="2" fill="#1f2d4a"/>
+          <text x="12" y="138" font-size="7" fill="#38bdf8" font-family="monospace">포장/창고</text>
+          <circle cx="14" cy="147" r="2" fill="#f59e0b"/><rect x="20" y="144" width="50" height="4" rx="2" fill="#1f2d4a"/>
+          <!-- 중: 메인 + 썸네일 -->
+          <rect x="86" y="26" width="148" height="120" rx="6" fill="#000" stroke="#1f2d4a"/>
+          <rect x="94" y="34" width="70" height="13" rx="4" fill="rgba(0,0,0,0.5)"/>
+          <circle cx="102" cy="40" r="2.5" fill="#22c55e"/><rect x="108" y="38" width="48" height="5" rx="2" fill="#22d3ee"/>
+          <rect x="198" y="34" width="28" height="12" rx="3" fill="rgba(239,68,68,.25)"/><text x="212" y="43" font-size="6" fill="#fecaca" text-anchor="middle">●REC</text>
+          <text x="160" y="92" font-size="11" fill="#1e3a5a" text-anchor="middle" font-family="monospace">MAIN</text>
+          <rect x="86" y="152" width="35" height="42" rx="4" fill="#0e1626" stroke="#22d3ee"/>
+          <rect x="124" y="152" width="35" height="42" rx="4" fill="#0e1626" stroke="#1f2d4a"/>
+          <rect x="162" y="152" width="35" height="42" rx="4" fill="#0e1626" stroke="#1f2d4a"/>
+          <rect x="200" y="152" width="34" height="42" rx="4" fill="#0e1626" stroke="#1f2d4a"/>
+          <!-- 우: 상태 패널 -->
+          <rect x="240" y="26" width="74" height="52" rx="5" fill="#0e1626" stroke="#1f2d4a"/>
+          <text x="248" y="42" font-size="7" fill="#7e92b8" font-family="monospace">상태</text>
+          <text x="248" y="64" font-size="20" fill="#22c55e" font-family="monospace" font-weight="bold">9</text>
+          <text x="272" y="64" font-size="7" fill="#7e92b8">LIVE</text>
+          <rect x="240" y="84" width="74" height="110" rx="5" fill="#0e1626" stroke="#1f2d4a"/>
+          <text x="248" y="100" font-size="7" fill="#7e92b8" font-family="monospace">로그</text>
+          <rect x="248" y="108" width="58" height="3" rx="1" fill="#1f2d4a"/>
+          <rect x="248" y="116" width="50" height="3" rx="1" fill="#1f2d4a"/>
+          <rect x="248" y="124" width="54" height="3" rx="1" fill="#1f2d4a"/>
+          <rect x="248" y="132" width="44" height="3" rx="1" fill="#1f2d4a"/>
+        </svg>
+        <div class="type-card-body">
+          <ul>
+            <li class="good">구역별 카메라 목록(입구·A라인·B라인·포장·창고)</li>
+            <li class="good">큰 메인 + 멀티 썸네일 + 상태 패널·이벤트 로그</li>
+            <li class="good">한 대를 크게 강조하며 설명하기 좋음</li>
+            <li>실제 카메라 3대는 영상, 나머지는 데모 셀</li>
+          </ul>
+          <div class="url">접속:  /control</div>
+        </div>
+      </div>
+
+      <div class="type-card t-cards">
+        <div class="type-card-head">
+          <div class="t">🗂️ 카드형</div>
+          <div class="s">동등한 카드 격자</div>
+        </div>
+        <!-- 레이아웃 미리보기 (공장 라인 카드 · 3D 느낌) -->
+        <svg viewBox="0 0 320 200" style="display:block;width:100%;background:#0b1224;">
+          <rect x="0" y="0" width="320" height="20" fill="#0c1224"/>
+          <rect x="8" y="6" width="8" height="8" rx="2" fill="#38bdf8"/>
+          <rect x="20" y="7" width="70" height="6" rx="3" fill="#2a3a5e"/>
+          <rect x="232" y="6" width="26" height="9" rx="4" fill="#10241f"/>
+          <rect x="262" y="6" width="26" height="9" rx="4" fill="#2a1f0a"/>
+          <!-- 그룹1 헤더: 생산 라인 -->
+          <rect x="10" y="28" width="9" height="9" rx="3" fill="#2563eb"/>
+          <text x="24" y="36" font-size="8" fill="#eaf0ff" font-family="monospace" font-weight="bold">⚙ 생산 라인</text>
+          <!-- 카드 3개 (3D 기울기 느낌: 살짝 회전+그림자) -->
+          <g transform="rotate(-3 70 78)">
+            <rect x="42" y="46" width="56" height="64" rx="8" fill="#1b2747" stroke="#38bdf8" stroke-width="1.2"/>
+            <rect x="46" y="50" width="48" height="30" rx="4" fill="#000"/>
+            <text x="70" y="68" font-size="6" fill="#33518a" text-anchor="middle" font-family="monospace">A-01</text>
+            <rect x="48" y="86" width="44" height="4" rx="2" fill="#2a3a5e"/>
+            <rect x="48" y="94" width="20" height="10" rx="3" fill="#10241f"/><rect x="70" y="94" width="20" height="10" rx="3" fill="#1a2540"/>
+          </g>
+          <rect x="110" y="46" width="56" height="64" rx="8" fill="#161f38" stroke="#2a3a5e"/>
+          <rect x="114" y="50" width="48" height="30" rx="4" fill="#000"/>
+          <text x="138" y="68" font-size="6" fill="#33518a" text-anchor="middle" font-family="monospace">A-02</text>
+          <rect x="116" y="86" width="44" height="4" rx="2" fill="#2a3a5e"/>
+          <rect x="116" y="94" width="20" height="10" rx="3" fill="#10241f"/><rect x="138" y="94" width="20" height="10" rx="3" fill="#1a2540"/>
+          <g transform="rotate(3 206 78)">
+            <rect x="178" y="46" width="56" height="64" rx="8" fill="#1b2747" stroke="#2a3a5e"/>
+            <rect x="182" y="50" width="48" height="30" rx="4" fill="#000"/>
+            <text x="206" y="68" font-size="6" fill="#33518a" text-anchor="middle" font-family="monospace">B-01</text>
+            <rect x="184" y="86" width="44" height="4" rx="2" fill="#2a3a5e"/>
+            <rect x="184" y="94" width="20" height="10" rx="3" fill="#2a1f0a"/><rect x="206" y="94" width="20" height="10" rx="3" fill="#1a2540"/>
+          </g>
+          <rect x="246" y="46" width="56" height="64" rx="8" fill="#131a30" stroke="#2a3a5e" stroke-dasharray="3 2"/>
+          <text x="274" y="82" font-size="7" fill="#46587d" text-anchor="middle">+ 데모</text>
+          <!-- 그룹2 헤더: 품질 검증 -->
+          <rect x="10" y="124" width="9" height="9" rx="3" fill="#7c3aed"/>
+          <text x="24" y="132" font-size="8" fill="#eaf0ff" font-family="monospace" font-weight="bold">🔬 품질 검증</text>
+          <rect x="42" y="142" width="56" height="50" rx="8" fill="#161f38" stroke="#2a3a5e"/>
+          <rect x="46" y="146" width="48" height="26" rx="4" fill="#000"/>
+          <text x="70" y="162" font-size="6" fill="#5a4a8a" text-anchor="middle" font-family="monospace">Q-01</text>
+          <rect x="110" y="142" width="56" height="50" rx="8" fill="#161f38" stroke="#2a3a5e"/>
+          <rect x="114" y="146" width="48" height="26" rx="4" fill="#000"/>
+          <text x="138" y="162" font-size="6" fill="#5a4a8a" text-anchor="middle" font-family="monospace">Q-02</text>
+          <rect x="178" y="142" width="56" height="50" rx="8" fill="#161f38" stroke="#2a3a5e" stroke-dasharray="3 2"/>
+          <text x="206" y="170" font-size="7" fill="#46587d" text-anchor="middle">+ 데모</text>
+        </svg>
+        <div class="type-card-body">
+          <ul>
+            <li class="good">생산 라인 / 품질 검증 / 물류 그룹으로 묶음</li>
+            <li class="good">카드마다 KPI(가동률·불량률·생산량 등) 표시</li>
+            <li class="good"><strong>3D 느낌</strong> — 마우스 올리면 카드가 기울며 떠오름</li>
+            <li>스캔 라인·상태 태그로 공장 느낌</li>
+          </ul>
+          <div class="url">접속:  /cards</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout callout-tip">
+      <span class="callout-icon">💡</span>
+      <span class="callout-content"><strong>고르는 기준:</strong> "한 대를 크게 보여주며 설명" → 관제센터형. "여러 대를 한눈에 비교" → 카드형. 둘 다 꾸며보고 발표에 맞는 쪽을 골라도 좋아요.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 단계별 ===== -->
+<section>
+  <div class="container">
+    <h2 class="section-title">📦 단계별 따라하기</h2>
+    <p class="section-lead">NUC에서 순서대로 하면 돼요. 라즈베리파이는 손대지 않아요.</p>
+
+    <div class="cmd-card">
+      <div class="cmd-head" style="--accent:#64748B;">
+        <span class="cmd-badge">1</span>
+        <span class="cmd-emoji">📦</span>
+        <div class="cmd-name">라이브러리 설치<small>NUC에서 한 번만</small></div>
+      </div>
+      <div class="cmd-terminal">
+        <span class="prompt">$</span><code>pip install flask opencv-python</code>
+        <button class="copy-btn" data-cmd="pip install flask opencv-python">📋 복사</button>
+      </div>
+      <div class="cmd-body">
+        <div class="cmd-result-label">▶ 이렇게 하면</div>
+        <p class="big-easy">웹 서버용 <strong>Flask</strong>와 영상 변환용 <strong>OpenCV</strong>가 깔려요.</p>
+        <div class="mini-steps">
+          <div class="mini-step"><span class="mini-step-num">1</span><span class="mini-step-text">Flask: 폰·PC에 화면을 띄워주는 웹 서버예요.</span></div>
+          <div class="mini-step"><span class="mini-step-num">2</span><span class="mini-step-text">OpenCV: NUC 직결 IP 카메라(RTSP)를 받아 변환할 때 써요.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cmd-card">
+      <div class="cmd-head" style="--accent:#2563EB;">
+        <span class="cmd-badge">2</span>
+        <span class="cmd-emoji">🖥️</span>
+        <div class="cmd-name">백엔드 켜기<small>nuc_monitor_server.py</small></div>
+      </div>
+      <div class="cmd-terminal">
+        <span class="prompt">$</span><code>python3 nuc_monitor_server.py --pi5 192.168.50.111</code>
+        <button class="copy-btn" data-cmd="python3 nuc_monitor_server.py --pi5 192.168.50.111">📋 복사</button>
+      </div>
+      <div class="cmd-body">
+        <div class="cmd-result-label">▶ 이렇게 하면</div>
+        <p class="big-easy">NUC가 카메라 영상을 모으고, <strong>접속 주소를 화면에 알려줘요.</strong></p>
+        <pre class="block"><span class="cm"># 터미널에 이렇게 떠요 — 이 주소들을 폰/PC에 입력</span>
+  📱 폰/PC 접속:  http://192.168.50.237:8080
+     - 시작/선택 :  /
+     - 관제센터형 :  /control
+     - 카드형     :  /cards</pre>
+        <div class="mini-steps">
+          <div class="mini-step"><span class="mini-step-num">1</span><span class="mini-step-text">이 주소들이 뜨고 <strong>터미널이 멈춘 듯 그대로 있으면 정상</strong>이에요. (서버가 켜진 상태)</span></div>
+          <div class="mini-step"><span class="mini-step-num">2</span><span class="mini-step-text">영상은 여기 터미널이 아니라 <strong>브라우저</strong>에서 봐요. 창은 끄지 말고 두세요.</span></div>
+        </div>
+        <div class="callout callout-tip">
+          <span class="callout-icon">💡</span>
+          <span class="callout-content"><strong>팁:</strong> Pi5에서 <code>camera_server_pi5_v2.py</code>가 먼저 돌고 있어야 웹캠 영상이 나와요. (이건 기존 그대로 실행)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cmd-card">
+      <div class="cmd-head" style="--accent:#059669;">
+        <span class="cmd-badge">3</span>
+        <span class="cmd-emoji">📱</span>
+        <div class="cmd-name">폰·PC에서 접속<small>템플릿 골라 열기</small></div>
+      </div>
+      <div class="cmd-terminal">
+        <span class="prompt">$</span><code>폰 브라우저:  http://192.168.50.237:8080</code>
+        <button class="copy-btn" data-cmd="http://192.168.50.237:8080">📋 복사</button>
+      </div>
+      <div class="cmd-body">
+        <div class="cmd-result-label">▶ 이렇게 하면</div>
+        <p class="big-easy">시작 페이지에서 <strong>관제센터형/카드형</strong>을 골라 들어가요. 둘 다 반응형이라 폰에서도 깔끔해요.</p>
+        <div class="mini-steps">
+          <div class="mini-step"><span class="mini-step-num">1</span><span class="mini-step-text"><code>/</code> 로 들어가면 두 템플릿을 고르는 화면이 나와요.</span></div>
+          <div class="mini-step"><span class="mini-step-num">2</span><span class="mini-step-text"><code>/control</code> 또는 <code>/cards</code> 로 바로 들어갈 수도 있어요.</span></div>
+          <div class="mini-step"><span class="mini-step-num">3</span><span class="mini-step-text">"📸 스냅샷"을 누르면 그 카메라 화면 1장이 NUC에 저장돼요.</span></div>
+        </div>
+        <div class="callout callout-info">
+          <span class="callout-icon">📶</span>
+          <span class="callout-content"><strong>폰 접속 조건:</strong> 폰이 NUC와 <strong>같은 네트워크</strong>여야 하고, NUC 방화벽이 8080을 막지 않아야 해요.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cmd-card">
+      <div class="cmd-head" style="--accent:#7C3AED;">
+        <span class="cmd-badge">4</span>
+        <span class="cmd-emoji">🎨</span>
+        <div class="cmd-name">템플릿 꾸미기<small>templates/ 안의 HTML</small></div>
+      </div>
+      <div class="cmd-body">
+        <div class="cmd-result-label">▶ 이렇게 하면</div>
+        <p class="big-easy">템플릿 HTML의 <code>[TEAM]</code> 자리를 고치면 화면이 우리 팀 색으로 바뀌어요.</p>
+        <pre class="block"><span class="cm"># 예) 관제센터형 색 테마 — template_control.html 위쪽 :root</span>
+:root{
+  <span class="st">--bg</span>:#0a0e1a;      <span class="cm">/* 전체 배경색 — 여기만 바꿔도 분위기가 확 달라져요 */</span>
+  <span class="st">--accent</span>:#22d3ee;  <span class="cm">/* 강조색 (관제 시안) */</span>
+}</pre>
+        <div class="mini-steps">
+          <div class="mini-step"><span class="mini-step-num">1</span><span class="mini-step-text">파일을 저장하고 브라우저를 새로고침하면 바로 반영돼요. (서버 재시작 불필요)</span></div>
+          <div class="mini-step"><span class="mini-step-num">2</span><span class="mini-step-text">색 → 배치 → 기능 순으로 조금씩 바꿔보면 안전해요.</span></div>
+        </div>
+        <div class="callout callout-warning">
+          <span class="callout-icon">⚠️</span>
+          <span class="callout-content"><strong>주의:</strong> 영상은 <code>/stream/카메라이름</code>, 목록은 <code>/api/cameras</code> 로 들어와요. 이 주소들은 <strong>바꾸지 말고</strong> 그대로 써야 영상이 나와요.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 팀 커스터마이징 아이디어 ===== -->
+<section style="background:var(--color-surface);">
+  <div class="container">
+    <h2 class="section-title">🛠️ 팀 커스터마이징 아이디어</h2>
+    <p class="section-lead">정답은 없어요. 아래는 출발 아이디어이고, 팀이 더 좋은 걸 만들어도 좋아요.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>난이도</th><th>아이디어</th><th>어디를 고치나</th></tr></thead>
+        <tbody>
+          <tr><td>★☆☆</td><td>팀 색/로고/제목으로 테마 바꾸기</td><td>템플릿 위쪽 <code>:root</code> 색, 상단 바</td></tr>
+          <tr><td>★☆☆</td><td>카드 크기·열 수 조정</td><td>카드형 <code>grid-template-columns</code> 숫자</td></tr>
+          <tr><td>★★☆</td><td>카메라 이름·순서·라벨 바꾸기</td><td>화면 표시 텍스트 (영상 주소는 유지)</td></tr>
+          <tr><td>★★☆</td><td>연결 상태 점(초록/빨강) 살아있게</td><td><code>/api/cameras</code> 활용 + JS</td></tr>
+          <tr><td>★★★</td><td>전체화면 버튼·자동 순환(슬라이드쇼)</td><td>템플릿 JS에 기능 추가</td></tr>
+          <tr><td>★★★</td><td>관제+카드를 섞은 우리만의 3번째 화면</td><td>새 HTML + 백엔드에 라우트 1줄 추가</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 폰·PC 발표 ===== -->
+<section>
+  <div class="container">
+    <h2 class="section-title">📱💻 폰이나 PC로 발표하기</h2>
+    <p class="section-lead">완성한 화면을 폰이나 PC로 띄워 팀이 발표해요. 둘 다 같은 주소로 접속하면 돼요.</p>
+    <div class="cmd-card">
+      <div class="cmd-head" style="--accent:#D97706;">
+        <span class="cmd-badge">5</span>
+        <span class="cmd-emoji">🎤</span>
+        <div class="cmd-name">발표 준비<small>폰·PC에서 한 번 더 점검</small></div>
+      </div>
+      <div class="cmd-body">
+        <div class="mini-steps">
+          <div class="mini-step"><span class="mini-step-num">1</span><span class="mini-step-text">발표할 기기(폰 또는 PC)를 NUC와 <strong>같은 네트워크</strong>에 연결해요.</span></div>
+          <div class="mini-step"><span class="mini-step-num">2</span><span class="mini-step-text">브라우저에 <code>http://&lt;NUC IP&gt;:8080/control</code>(또는 <code>/cards</code>)을 띄워요.</span></div>
+          <div class="mini-step"><span class="mini-step-num">3</span><span class="mini-step-text"><strong>PC·빔프로젝터</strong>로 발표하면 큰 화면으로, <strong>폰</strong>이면 가로로 돌려 시원하게 보여줘요. 발표 중 썸네일/필터로 카메라를 바꿔가며 설명해요.</span></div>
+          <div class="mini-step"><span class="mini-step-num">4</span><span class="mini-step-text">미리 즐겨찾기에 주소를 저장해 두면 발표 때 빠르게 열 수 있어요.</span></div>
+        </div>
+        <div class="callout callout-tip">
+          <span class="callout-icon">💡</span>
+          <span class="callout-content"><strong>발표 팁:</strong> 영상이 끊기면 당황하지 말고 새로고침. 백엔드가 자동 재접속하므로 잠시 뒤 다시 나와요. 두 화면 다 반응형이라 PC·폰 어디서 열어도 깔끔해요.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 추천 순서 ===== -->
+<section style="background:var(--color-surface);">
+  <div class="container">
+    <h2 class="section-title">✅ 추천 진행 순서</h2>
+    <div class="checklist">
+      <div class="checklist-item"><div class="checklist-box"></div><div>1. Pi5에서 <code>camera_server_pi5_v2.py</code> 실행 (웹캠 2개 송출, 기존 그대로)</div></div>
+      <div class="checklist-item"><div class="checklist-box"></div><div>2. NUC에 <code>pip install flask opencv-python</code></div></div>
+      <div class="checklist-item"><div class="checklist-box"></div><div>3. <code>nuc_monitor_server.py</code> 의 <code>CAMERAS</code>를 우리 IP/주소로 확인</div></div>
+      <div class="checklist-item"><div class="checklist-box"></div><div>4. <code>python3 nuc_monitor_server.py</code> 실행 → 주소 확인</div></div>
+      <div class="checklist-item"><div class="checklist-box"></div><div>5. PC·폰에서 <code>/control</code> 과 <code>/cards</code> 둘 다 열어보기</div></div>
+      <div class="checklist-item"><div class="checklist-box"></div><div>6. 팀이 쓸 템플릿 하나 선택</div></div>
+      <div class="checklist-item"><div class="checklist-box"></div><div>7. <code>[TEAM]</code> 자리를 고쳐 우리 팀 스타일로 디자인</div></div>
+      <div class="checklist-item"><div class="checklist-box"></div><div>8. 폰이나 PC로 띄워 발표 리허설</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 트러블슈팅 ===== -->
+<section>
+  <div class="container">
+    <h2 class="section-title">🐛 자주 막히는 부분</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>증상</th><th>원인</th><th>해결</th></tr></thead>
+        <tbody>
+          <tr><td>폰에서 주소가 안 열림</td><td>다른 와이파이 / 방화벽</td><td>같은 네트워크 확인, NUC에서 8080 포트 열기</td></tr>
+          <tr><td>웹캠만 까만 화면</td><td>Pi5 서버 꺼짐</td><td>Pi5에서 <code>camera_server_pi5_v2.py</code> 실행 확인</td></tr>
+          <tr><td>IP 카메라만 안 나옴</td><td>RTSP 주소·비번 오류</td><td>NUC에서 <code>ffprobe -rtsp_transport tcp rtsp://...@192.168.50.123:554/...</code> 검증</td></tr>
+          <tr><td>화면 고쳤는데 안 바뀜</td><td>브라우저 캐시</td><td>강력 새로고침(Ctrl+Shift+R) 또는 다른 탭에서 열기</td></tr>
+          <tr><td>영상이 사라짐</td><td><code>/stream/</code> 주소를 바꿈</td><td>템플릿에서 영상 주소는 원래대로 유지</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 배운 개념 ===== -->
+<section style="background:var(--color-card);border-top:1px solid var(--color-border);">
+  <div class="container">
+    <h2 class="section-title">🎓 이번 실습에서 배운 핵심 개념</h2>
+    <div class="table-wrap">
+      <table>
+        <tbody>
+          <tr><td><strong>백엔드 / 프론트 분리</strong></td><td>서버는 데이터만, 화면(HTML)은 따로 — 화면을 자유롭게 바꿔도 서버는 그대로</td></tr>
+          <tr><td><strong>템플릿 렌더링</strong></td><td>Flask가 <code>templates/</code> 의 HTML을 서빙 (<code>render_template</code>)</td></tr>
+          <tr><td><strong>MJPEG 스트림</strong></td><td>모든 카메라를 <code>/stream/이름</code> 한 방식으로 통일</td></tr>
+          <tr><td><strong>반응형 UI</strong></td><td>같은 화면이 PC·폰 양쪽에서 깔끔하게 (CSS 미디어쿼리)</td></tr>
+          <tr><td><strong>0.0.0.0 바인딩</strong></td><td>서버를 열어 같은 네트워크의 폰·PC가 접속 → 폰·PC 발표 가능</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <div style="font-weight:700;font-size:1.1rem;margin-bottom:0.3rem;color:#E2E8F0;">📹 실습 가이드 — NUC 통합 모니터링 화면</div>
+    <div>백엔드 공통(NUC Flask) · 템플릿 2종(관제센터형/카드형) · 팀이 꾸며 폰이나 PC로 발표</div>
+    <div style="margin-top:0.5rem;opacity:0.7;">Physical AI 교육 · LeKiwi 프로젝트</div>
+  </div>
+</footer>
+
+<script>
+  document.querySelectorAll('.copy-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var cmd = btn.getAttribute('data-cmd');
+      var done = function () {
+        var original = btn.innerHTML;
+        btn.innerHTML = '✅ 복사됨';
+        btn.classList.add('copied');
+        setTimeout(function () { btn.innerHTML = original; btn.classList.remove('copied'); }, 1500);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(cmd).then(done).catch(function () { fallbackCopy(cmd, done); });
+      } else { fallbackCopy(cmd, done); }
+    });
+  });
+  function fallbackCopy(text, done) {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta); done();
+  }
+</script>
+</body>
+</html>

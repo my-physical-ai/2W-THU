@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>실습 가이드 FLIR ONE 열화상 카메라</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --color-primary: #2563EB;
+  --color-primary-light: #DBEAFE;
+  --color-secondary: #7C3AED;
+  --color-secondary-light: #EDE9FE;
+  --color-success: #059669;
+  --color-success-light: #D1FAE5;
+  --color-warning: #D97706;
+  --color-warning-light: #FEF3C7;
+  --color-danger: #DC2626;
+  --color-danger-light: #FEE2E2;
+  --color-surface: #F8FAFC;
+  --color-card: #FFFFFF;
+  --color-text: #1E293B;
+  --color-muted: #64748B;
+  --color-border: #E2E8F0;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Noto Sans KR', sans-serif; color: var(--color-text);
+  background: var(--color-surface); line-height: 1.75; }
+code, pre { font-family: 'JetBrains Mono', monospace; }
+.container { max-width: 900px; margin: 0 auto; padding: 0 1.5rem; }
+section { padding: 3rem 0; }
+.section-title { font-size: 1.85rem; font-weight: 700; margin-bottom: 0.5rem; }
+.section-lead { color: var(--color-muted); margin-bottom: 2rem; }
+
+/* 히어로 — 열화상이라 따뜻한 오렌지 그래디언트 */
+.hero { background: linear-gradient(135deg, #78350F, #F59E0B); color: white; padding: 3.5rem 0 3rem; }
+.hero h1 { font-size: 2.6rem; font-weight: 900; line-height: 1.2; }
+.hero-subtitle { font-size: 1.1rem; margin-top: 0.85rem; opacity: 0.95; }
+.hero-tags { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.pill { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.35);
+  padding: 0.3rem 0.85rem; border-radius: 999px; font-size: 0.8rem; font-weight: 500; }
+
+/* 핵심 개념 박스 */
+.concept-box { background: var(--color-card); border: 1px solid var(--color-border);
+  border-radius: 16px; padding: 1.75rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
+.concept-box h3 { font-size: 1.15rem; margin-bottom: 0.75rem; display:flex; gap:0.5rem; align-items:center; }
+.vs-row { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem; }
+.vs-card { flex: 1; min-width: 240px; border-radius: 12px; padding: 1.1rem; }
+.vs-card.webcam { background: var(--color-primary-light); border-left: 4px solid var(--color-primary); }
+.vs-card.flir { background: var(--color-warning-light); border-left: 4px solid var(--color-warning); }
+.vs-card .vs-title { font-weight: 700; margin-bottom: 0.4rem; }
+.vs-card .vs-path { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--color-text); }
+
+/* 플로우 다이어그램 */
+.flow-diagram { display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+  padding: 2rem; background: var(--color-card); border: 1px solid var(--color-border);
+  border-radius: 16px; overflow-x: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+.flow-node { background: var(--color-card); border: 2px solid var(--node-color, var(--color-primary));
+  border-radius: 12px; padding: 1.1rem; text-align: center; min-width: 110px;
+  transition: transform 0.2s, box-shadow 0.2s; }
+.flow-node:hover { transform: translateY(-4px); box-shadow: 0 8px 25px rgba(0,0,0,0.12); }
+.flow-node-icon { font-size: 1.7rem; margin-bottom: 0.4rem; }
+.flow-node-title { font-weight: 700; font-size: 0.85rem; }
+.flow-node-desc { font-size: 0.72rem; color: var(--color-muted); margin-top: 0.2rem; }
+.flow-arrow { flex-shrink: 0; }
+
+/* 명령어 카드 */
+.cmd-card { background: var(--color-card); border: 1px solid var(--color-border);
+  border-radius: 16px; overflow: hidden; margin-bottom: 2rem;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.08); }
+.cmd-head { display: flex; align-items: center; gap: 0.85rem;
+  padding: 1.1rem 1.5rem; color: white; background: var(--accent, var(--color-primary)); }
+.cmd-badge { flex-shrink: 0; width: 2.1rem; height: 2.1rem; border-radius: 50%;
+  background: rgba(255,255,255,0.25); border: 2px solid rgba(255,255,255,0.6);
+  display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.05rem; }
+.cmd-emoji { font-size: 1.7rem; }
+.cmd-name { font-weight: 700; font-size: 1.15rem; }
+.cmd-name small { display:block; font-weight:400; font-size:0.8rem; opacity:0.85; margin-top:0.1rem; }
+.cmd-terminal { background: #0F172A; color: #E2E8F0; padding: 1.1rem 1.5rem;
+  font-size: 0.95rem; display: flex; align-items: center; gap: 0.6rem; overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace; }
+.cmd-terminal .prompt { color: #4ADE80; user-select: none; }
+.cmd-terminal code { white-space: nowrap; flex: 1; }
+.copy-btn { flex-shrink: 0; margin-left: auto; background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.25); color: #E2E8F0; border-radius: 8px;
+  padding: 0.35rem 0.75rem; font-size: 0.8rem; font-family: 'Noto Sans KR', sans-serif;
+  font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem;
+  transition: background 0.15s; }
+.copy-btn:hover { background: rgba(255,255,255,0.22); }
+.copy-btn.copied { background: var(--color-success); border-color: var(--color-success); color: white; }
+.cmd-body { padding: 1.5rem; }
+.cmd-result-label { display: inline-flex; align-items: center; gap: 0.4rem;
+  font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--accent, var(--color-primary)); margin-bottom: 0.6rem; }
+.big-easy { font-size: 1.05rem; font-weight: 500; }
+.mini-steps { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 1rem; }
+.mini-step { display: flex; gap: 0.75rem; align-items: flex-start;
+  background: var(--color-surface); border-radius: 10px; padding: 0.75rem 1rem; }
+.mini-step-num { flex-shrink: 0; width: 1.6rem; height: 1.6rem; border-radius: 50%;
+  background: var(--accent, var(--color-primary)); color: white; display: flex;
+  align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; }
+.mini-step-text { font-size: 0.92rem; }
+
+/* 보조 박스 */
+.analogy-box { display: flex; gap: 1.1rem; padding: 1.25rem; background: var(--color-secondary-light);
+  border-radius: 12px; border-left: 4px solid var(--color-secondary); margin-top: 1rem; }
+.analogy-icon { font-size: 2rem; flex-shrink: 0; }
+.analogy-title { font-weight: 700; font-size: 0.8rem; color: var(--color-secondary);
+  text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; }
+.analogy-text { line-height: 1.65; font-size: 0.95rem; }
+.callout { display: flex; gap: 0.75rem; padding: 1rem 1.25rem; border-radius: 10px;
+  align-items: flex-start; margin-top: 1.5rem; }
+.callout-icon { font-size: 1.25rem; flex-shrink: 0; }
+.callout-content { font-size: 0.95rem; line-height: 1.6; }
+.callout-tip { background: var(--color-success-light); border-left: 3px solid var(--color-success); }
+.callout-warning { background: var(--color-warning-light); border-left: 3px solid var(--color-warning); }
+.callout-info { background: var(--color-primary-light); border-left: 3px solid var(--color-primary); }
+
+/* 팔레트 테이블 */
+.palette-table { width: 100%; border-collapse: collapse; margin-top: 1rem;
+  background: var(--color-card); border-radius: 12px; overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+.palette-table th { background: var(--color-text); color: white; padding: 0.85rem 1rem;
+  text-align: left; font-size: 0.85rem; }
+.palette-table td { padding: 0.85rem 1rem; border-bottom: 1px solid var(--color-border); font-size: 0.9rem; }
+.palette-table tr:last-child td { border-bottom: none; }
+.palette-table code { background: var(--color-surface); padding: 0.15rem 0.4rem; border-radius: 5px;
+  font-size: 0.82rem; }
+.grad-bar { height: 14px; border-radius: 7px; margin-top: 4px; }
+
+@media (max-width: 768px) {
+  .hero h1 { font-size: 2rem; }
+  .flow-diagram { flex-direction: column; }
+  .flow-arrow svg { transform: rotate(90deg); }
+}
+@media print {
+  .hero { background: white !important; color: black !important; }
+  .cmd-head { color: black !important; -webkit-print-color-adjust: exact; }
+  .flow-node:hover { transform: none; }
+  .copy-btn { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- 히어로 -->
+<div class="hero">
+  <div class="container">
+    <div class="hero-tags">
+      <span class="pill">🌡️ 열화상</span>
+      <span class="pill">FLIR ONE</span>
+      <span class="pill">Ubuntu</span>
+      <span class="pill">libusb / v4l2loopback</span>
+      <span class="pill">Physical AI</span>
+    </div>
+    <h1>실습 가이드 FLIR ONE 열화상 카메라</h1>
+    <p class="hero-subtitle">USB로 꽂은 FLIR ONE을 Ubuntu에서 진짜 열화상 영상으로 띄우기까지, 한 단계씩 따라 합니다.</p>
+  </div>
+</div>
+
+<!-- 핵심 개념 -->
+<section>
+  <div class="container">
+    <h2 class="section-title">먼저 이것부터 이해해요 🧠</h2>
+    <p class="section-lead">왜 FLIR ONE은 꽂아도 화면이 안 나올까요? 이걸 알면 모든 단계가 쉬워집니다.</p>
+
+    <div class="concept-box">
+      <h3>🔌 FLIR ONE은 "일반 웹캠"이 아니에요</h3>
+      <p>USB에 꽂으면 컴퓨터가 장치를 알아봅니다(<code>lsusb</code>에 보임). 하지만 일반 웹캠처럼 <code>/dev/video0</code>이 저절로 생기지 않아요. FLIR ONE은 <strong>자기만의 방식(전용 USB 프로토콜)</strong>으로 열화상 데이터를 주기 때문이에요.</p>
+      <div class="vs-row">
+        <div class="vs-card webcam">
+          <div class="vs-title">🎥 일반 웹캠 (예: 로지텍)</div>
+          <div class="vs-path">USB → /dev/video0 자동 생성 → 바로 사용</div>
+        </div>
+        <div class="vs-card flir">
+          <div class="vs-title">🌡️ FLIR ONE</div>
+          <div class="vs-path">USB → libusb로 직접 읽기 → 가상 카메라로 변환</div>
+        </div>
+      </div>
+      <div class="analogy-box">
+        <div class="analogy-icon">📮</div>
+        <div class="analogy-content">
+          <div class="analogy-title">쉽게 말하면</div>
+          <p class="analogy-text">일반 웹캠은 "한국말"로 말해서 컴퓨터가 바로 알아들어요. FLIR ONE은 "자기만의 암호"로 말해서, <strong>통역기(드라이버)</strong>를 거쳐야 컴퓨터가 알아듣습니다. 우리가 할 일이 바로 그 통역기를 설치하는 거예요.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 한눈에 보기 -->
+<section style="padding-top:0;">
+  <div class="container">
+    <h2 class="section-title">한눈에 보기 🗺️</h2>
+    <p class="section-lead">전체 흐름이에요. 이 순서대로 따라가면 됩니다.</p>
+    <div class="flow-diagram">
+      <div class="flow-node" style="--node-color:#64748B">
+        <div class="flow-node-icon">🔎</div>
+        <div class="flow-node-title">0. lsusb</div>
+        <div class="flow-node-desc">시리얼 확인 후 넣기</div>
+      </div>
+      <div class="flow-arrow"><svg width="34" height="24" viewBox="0 0 40 24"><path d="M0 12h30M24 4l8 8-8 8" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+      <div class="flow-node" style="--node-color:#2563EB">
+        <div class="flow-node-icon">🐍</div>
+        <div class="flow-node-title">1. USB 확인</div>
+        <div class="flow-node-desc">파이썬 테스트</div>
+      </div>
+      <div class="flow-arrow"><svg width="34" height="24" viewBox="0 0 40 24"><path d="M0 12h30M24 4l8 8-8 8" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+      <div class="flow-node" style="--node-color:#7C3AED">
+        <div class="flow-node-icon">📦</div>
+        <div class="flow-node-title">2. 드라이버</div>
+        <div class="flow-node-desc">빌드 & 컴파일</div>
+      </div>
+      <div class="flow-arrow"><svg width="34" height="24" viewBox="0 0 40 24"><path d="M0 12h30M24 4l8 8-8 8" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+      <div class="flow-node" style="--node-color:#D97706">
+        <div class="flow-node-icon">📺</div>
+        <div class="flow-node-title">3. 가상카메라</div>
+        <div class="flow-node-desc">v4l2loopback</div>
+      </div>
+      <div class="flow-arrow"><svg width="34" height="24" viewBox="0 0 40 24"><path d="M0 12h30M24 4l8 8-8 8" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+      <div class="flow-node" style="--node-color:#059669">
+        <div class="flow-node-icon">🔥</div>
+        <div class="flow-node-title">4. 실행</div>
+        <div class="flow-node-desc">열화상 보기</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 명령어 카드들 -->
+<section style="padding-top:0;">
+  <div class="container">
+    <h2 class="section-title">단계별 실습 명령어 ⌨️</h2>
+    <p class="section-lead">위에서 아래로, 1번부터 차례대로 따라 하세요. 각 명령은 복사 버튼으로 바로 복사할 수 있어요.</p>
+
+    <!-- 0-A : 시리얼(식별번호) 먼저 찾기 -->
+    <div class="cmd-card" style="--accent:#475569;">
+      <div class="cmd-head">
+        <span class="cmd-badge">0</span>
+        <span class="cmd-emoji">🔎</span>
+        <div class="cmd-name">먼저 시리얼(식별번호) 찾기<small>lsusb 전체 목록에서 FLIR 번호를 눈으로 확인</small></div>
+      </div>
+      <div class="cmd-terminal">
+        <span class="prompt">$</span><code>lsusb</code>
+        <button class="copy-btn" data-cmd="lsusb">📋 복사</button>
+      </div>
+      <div class="cmd-body">
+        <div class="cmd-result-label">▶ 이렇게 하면</div>
+        <p class="big-easy">컴퓨터에 꽂힌 모든 USB 장치가 나와요. 그중 <strong>FLIR 줄의 번호</strong>를 찾는 게 첫 번째 할 일이에요.</p>
+        <div class="mini-steps">
+          <div class="mini-step"><span class="mini-step-num">1</span><span class="mini-step-text">목록에서 이런 줄을 찾아요: <code>Bus 001 Device 010: ID 09cb:1996 FLIR Systems FLIR ONE Camera</code></span></div>
+          <div class="mini-step"><span class="mini-step-num">2</span><span class="mini-step-text">가운데 <code>ID 09cb:1996</code> 이 부분이 <strong>시리얼(식별번호)</strong>이에요. <code>09cb</code>는 제조사, <code>1996</code>은 제품 번호.</span></div>
+          <div class="mini-step"><span class="mini-step-num">3</span><span class="mini-step-text">이 번호가 보이면 다음 칸(0-B)에서 그 번호를 그대로 넣어요. 안 보이면 USB를 다시 꽂아요.</span></div>
+        </div>
+        <div class="callout callout-warning"><span class="callout-icon">📝</span><span class="callout-content"><strong>중요:</strong> 시리얼 번호(<code>09cb:1996</code>)가 <strong>먼저 나와야</strong> 다음 명령에 넣을 수 있어요. 만약 다른 번호가 나오면(다른 FLIR 모델), 그 번호를 대신 사용하세요.</span></div>
+        <div class="analogy-box">
+          <div class="analogy-icon">🪪</div>
+          <div class="analogy-content">
+            <div class="analogy-title">쉽게 말하면</div>
+            <p class="analogy-text"><code>lsusb</code>는 교실에서 출석을 부르는 거예요. FLIR이 "저 여기 있어요(<code>09cb:1996</code>)"라고 대답하면, 그 <strong>학번(시리얼)</strong>을 받아 적어 두는 단계예요.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 0-B : 찾은 시리얼을 넣어 자세히 확인 -->
+    <div class="cmd-card" style="--accent:#64748B;">
+      <div class="cmd-head">
+        <span class="cmd-badge">0</span>
+        <span class="cmd-emoji">🔍</span>
+        <div class="cmd-name">찾은 시리얼 넣어 자세히 확인<small>그 번호로 FLIR만 콕 집어 진단</small></div>
+      </div>
+      <div class="cmd-terminal">
+        <span class="prompt">$</span><code>lsusb -d 09cb:1996</code>
+        <button class="copy-btn" data-cmd="lsusb -d 09cb:1996">📋 복사</button>
+      </div>
+      <div class="cmd-body">
+        <div class="cmd-result-label">▶ 이렇게 하면</div>
+        <p class="big-easy">방금 찾은 시리얼(<code>09cb:1996</code>)을 <code>-d</code> 뒤에 넣어, <strong>FLIR 하나만 콕 집어</strong> 확인해요.</p>
+        <div class="mini-steps">
+          <div class="mini-step"><span class="mini-step-num">1</span><span class="mini-step-text"><code>-d 09cb:1996</code>의 <code>09cb:1996</code>이 바로 0-A에서 찾은 그 번호예요. 다른 번호였다면 바꿔 넣어요.</span></div>
+          <div class="mini-step"><span class="mini-step-num">2</span><span class="mini-step-text"><code>FLIR Systems FLIR ONE Camera</code> 한 줄만 나오면 <strong>USB 연결·전원·인식 모두 정상</strong>.</span></div>
+          <div class="mini-step"><span class="mini-step-num">3</span><span class="mini-step-text">이어서 <code>ls /dev/video*</code> → "없음"이 나와도 정상이에요 (FLIR은 웹캠이 아니니까요).</span></div>
+          <div class="mini-step"><span class="mini-step-num">4</span><span class="mini-step-text"><code>sudo dmesg | grep -i flir</code>로 커널이 FLIR을 봤는지 로그도 확인해요.</span></div>
+        </div>
+        <div class="callout callout-info"><span class="callout-icon">ℹ️</span><span class="callout-content"><strong>참고:</strong> <code>Cannot open device /dev/video0</code> 오류가 떠도 당황하지 마세요. FLIR은 원래 <code>/dev/video0</code>을 안 만들어요. 다음 단계로 가면 됩니다.</span></div>
+      </div>
+    </div>
+
+    <!-- 1 -->
+    <div class="cmd-card" style="--accent:#2563EB;">
+      <div class="cmd-head">
+        <span class="cmd-badge">1</span>
+        <span class="cmd-emoji">🐍</span>
+        <div class="cmd-name">파이썬으로 USB 접근 확인<small>libusb로 직접 잡히는지 테스트</small></div>
+      </div>
+      <div class="cmd-terminal">
+        <span class="prompt">$</span><code>conda activate lerobot &amp;&amp; pip install pyusb libusb1</code>
+        <button class="copy-btn" data-cmd="conda activate lerobot && pip install pyusb libusb1">📋 복사</button>
+      </div>
+      <div class="cmd-body">
+        <div class="cmd-result-label">▶ 이렇게 하면</div>
+        <p class="big-easy">파이썬이 FLIR과 <strong>직접 대화할 수 있는 도구(pyusb)</strong>를 설치해요.</p>
+        <div class="mini-steps">
+          <div class="mini-step"><span class="mini-step-num">1</span><span class="mini-step-text">설치 후 함께 드린 <code>test_flir.py</code>를 실행해요: <code>python3 test_flir.py --detail</code></span></div>
+          <div class="mini-step"><span class="mini-step-num">2</span><span class="mini-step-text"><code>FLIR ONE 발견!</code>이 나오면 libusb로 접근 가능하다는 뜻이에요.</span></div>
+          <div class="mini-step"><span class="mini-step-num">3</span><span class="mini-step-text">권한 오류가 나면 <code>sudo python3 test_flir.py</code>로 다시 실행해요.</span></div>
+        </div>
+        <div class="analogy-box">
+          <div class="analogy-icon">🤝</div>
+          <div class="analogy-content">
+            <div class="analogy-title">쉽게 말하면</div>
+            <p class="analogy-text"><code>Interface 0/1/2</code>에 <code>IN/OUT</code> 통로가 보이면, FLIR이 "여기로 열화상 데이터 줄게"라고 약속한 거예요. 이제 그 데이터를 받아올 통역기만 켜면 됩니다.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2 -->
+    <div class="cmd-card" style="--accent:#7C3AED;">
+      <div class="cmd-head">
+        <span class="cmd-badge">2</span>
+        <span class="cmd-emoji">📦</span>
+        <div class="cmd-name">드라이버 빌드<small>flirone-v4l2 내려받아 컴파일</small></div>
+      </div>
+      <div class="cmd-terminal">
+        <span class="prompt">$</span><code>sudo apt install -y git cmake build-essential libusb-1.0-0-dev python3-opencv libjpeg-dev</code>
+        <button class="copy-btn" data-cmd="sudo apt install -y git cmake build-essential libusb-1.0-0-dev python3-opencv libjpeg-dev">📋 복사</button>
+      </div>
+      <div class="cmd-body">
+        <div class="cmd-result-label">▶ 이렇게 하면</div>
+        <p class="big-easy">FLIR 통역기를 만들 <strong>재료(빌드 도구·라이브러리)</strong>를 모두 준비해요.</p>
+        <div class="mini-steps">
+          <div class="mini-step"><span class="mini-step-num">1</span><span class="mini-step-text">소스를 내려받아요: <code>cd ~ &amp;&amp; git clone https://github.com/fnoop/flirone-v4l2.git</code></span></div>
+          <div class="mini-step"><span class="mini-step-num">2</span><span class="mini-step-text">폴더로 들어가 컴파일해요: <code>cd ~/flirone-v4l2 &amp;&amp; make</code></span></div>
+          <div class="mini-step"><span class="mini-step-num">3</span><span class="mini-step-text"><code>jpeglib.h</code> 오류가 나면 <code>sudo apt install -y libjpeg-dev</code> 후 <code>make clean &amp;&amp; make</code> 다시.</span></div>
+        </div>
+        <div class="callout callout-tip"><span class="callout-icon">💡</span><span class="callout-content"><strong>팁:</strong> <code>make</code>가 성공하면 폴더 안에 <code>flirone</code> 실행 파일이 생겨요. 이게 우리가 만든 "통역기"입니다.</span></div>
+      </div>
+    </div>
+
+    <!-- 3 -->
+    <div class="cmd-card" style="--accent:#D97706;">
+      <div class="cmd-head">
+        <span class="cmd-badge">3</span>
+        <span class="cmd-emoji">📺</span>
+        <div class="cmd-name">가상 카메라 만들기<small>v4l2loopback으로 /dev/video2 생성</small></div>
+      </div>
+      <div class="cmd-terminal">
+        <span class="prompt">$</span><code>sudo modprobe v4l2loopback devices=2 video_nr=2,3 card_label="FLIR_THERMAL","FLIR_VISIBLE" exclusive_caps=1</code>
+        <button class="copy-btn" data-cmd='sudo modprobe v4l2loopback devices=2 video_nr=2,3 card_label="FLIR_THERMAL","FLIR_VISIBLE" exclusive_caps=1'>📋 복사</button>
+      </div>
+      <div class="cmd-body">
+        <div class="cmd-result-label">▶ 이렇게 하면</div>
+        <p class="big-easy">진짜 웹캠처럼 보이는 <strong>가짜 카메라 칸(/dev/video2, video3)</strong>을 만들어요.</p>
+        <div class="mini-steps">
+          <div class="mini-step"><span class="mini-step-num">1</span><span class="mini-step-text">먼저 설치: <code>sudo apt install -y v4l2loopback-dkms v4l2loopback-utils</code></span></div>
+          <div class="mini-step"><span class="mini-step-num">2</span><span class="mini-step-text">통역기가 열화상 데이터를 이 가상 칸에 흘려보내면, 다른 프로그램은 그냥 웹캠처럼 읽어요.</span></div>
+          <div class="mini-step"><span class="mini-step-num">3</span><span class="mini-step-text">확인: <code>ls /dev/video*</code> → <code>/dev/video2</code>, <code>/dev/video3</code>이 보이면 성공.</span></div>
+        </div>
+        <div class="analogy-box">
+          <div class="analogy-icon">🚰</div>
+          <div class="analogy-content">
+            <div class="analogy-title">쉽게 말하면</div>
+            <p class="analogy-text">FLIR(우물물)을 그대로는 못 마셔요. 가상 카메라는 <strong>수도꼭지</strong> 같은 거예요. 통역기가 우물물을 수도관에 부어주면, 우리는 수도꼭지(<code>/dev/video2</code>)에서 편하게 받아 씁니다.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4 -->
+    <div class="cmd-card" style="--accent:#059669;">
+      <div class="cmd-head">
+        <span class="cmd-badge">4</span>
+        <span class="cmd-emoji">🔥</span>
+        <div class="cmd-name">열화상 실행 &amp; 화면 보기<small>터미널 2개로 캡처 + 재생</small></div>
+      </div>
+      <div class="cmd-terminal">
+        <span class="prompt">$</span><code>sudo ./flirone ./palettes/Iron_Black.raw</code>
+        <button class="copy-btn" data-cmd="sudo ./flirone ./palettes/Iron_Black.raw">📋 복사</button>
+      </div>
+      <div class="cmd-body">
+        <div class="cmd-result-label">▶ 이렇게 하면</div>
+        <p class="big-easy">FLIR이 찍은 <strong>열화상이 가상 카메라로 흘러가기 시작</strong>해요.</p>
+        <div class="mini-steps">
+          <div class="mini-step"><span class="mini-step-num">1</span><span class="mini-step-text"><strong>터미널 1</strong>에서 위 명령으로 캡처를 시작해요 (<code>cd ~/flirone-v4l2</code> 안에서).</span></div>
+          <div class="mini-step"><span class="mini-step-num">2</span><span class="mini-step-text"><strong>터미널 2</strong>(새 창)에서 화면을 봐요: <code>ffplay /dev/video2</code></span></div>
+          <div class="mini-step"><span class="mini-step-num">3</span><span class="mini-step-text">드디어 따뜻한 곳은 밝게, 차가운 곳은 어둡게 보이는 열화상이 떠요! 🎉</span></div>
+        </div>
+        <div class="callout callout-warning"><span class="callout-icon">⚠️</span><span class="callout-content"><strong>자주 나는 오류:</strong> <code>Assertion 'fdwr1 &gt;= 0' failed</code>가 뜨면, 3번 가상 카메라(<code>/dev/video2</code>)가 안 만들어진 거예요. 3번 단계를 먼저 실행하세요.</span></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- 팔레트 -->
+<section style="padding-top:0;">
+  <div class="container">
+    <h2 class="section-title">🎨 팔레트(색 입히기) 고르기</h2>
+    <p class="section-lead">같은 열화상이라도 어떤 색으로 보여줄지 고를 수 있어요. 목적에 맞게 바꿔보세요. <code>palettes/</code> 뒤의 파일 이름만 바꾸면 됩니다.</p>
+    <table class="palette-table">
+      <thead>
+        <tr><th>팔레트</th><th>색 느낌</th><th>언제 쓰면 좋아요</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>⭐ <code>Iron_Black.raw</code></td>
+          <td>검정→빨강→노랑→흰색<div class="grad-bar" style="background:linear-gradient(90deg,#000,#7f1d1d,#dc2626,#f59e0b,#fde047,#fff);"></div></td>
+          <td>FLIR 기본 느낌. 모터 발열·전기판넬·베어링 점검에 최고. <strong>현장 점검용</strong></td>
+        </tr>
+        <tr>
+          <td>⭐ <code>Rainbow.raw</code></td>
+          <td>파랑→초록→노랑→빨강→흰색<div class="grad-bar" style="background:linear-gradient(90deg,#1d4ed8,#10b981,#fde047,#dc2626,#fff);"></div></td>
+          <td>온도 차이가 한눈에 잘 보여요. <strong>발표·시연·교육용</strong></td>
+        </tr>
+        <tr>
+          <td><code>Grayscale.raw</code></td>
+          <td>검정→회색→흰색<div class="grad-bar" style="background:linear-gradient(90deg,#000,#888,#fff);"></div></td>
+          <td>깔끔해서 OpenCV·YOLO 분석에 좋아요. <strong>AI 학습용</strong></td>
+        </tr>
+        <tr>
+          <td><code>Grey.raw</code></td>
+          <td>회색 계열 (대비 다름)<div class="grad-bar" style="background:linear-gradient(90deg,#111,#666,#eee);"></div></td>
+          <td>Grayscale과 비슷하지만 온도 대비가 약간 달라요</td>
+        </tr>
+        <tr>
+          <td><code>Iron2.raw</code></td>
+          <td>Iron_Black 변형 (대비 강함)<div class="grad-bar" style="background:linear-gradient(90deg,#000,#991b1b,#ef4444,#fbbf24,#fff);"></div></td>
+          <td>발열 부위를 더 진하게 보고 싶을 때</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="callout callout-tip"><span class="callout-icon">💡</span><span class="callout-content"><strong>빅맨님 목적별 추천:</strong> 현장 점검 → <code>Iron_Black</code> · AI 학습(YOLO/VLM/LeRobot) → <code>Grayscale</code> · 발표/시연 → <code>Rainbow</code></span></div>
+  </div>
+</section>
+
+<!-- 추천 실행 순서 -->
+<section style="padding-top:0; padding-bottom:4rem;">
+  <div class="container">
+    <h2 class="section-title">✅ 추천 실행 순서</h2>
+    <p class="section-lead">한 번에 다 하려 하지 말고, 이 순서로 하나씩 확인하며 진행하세요.</p>
+    <div class="flow-diagram">
+      <div class="flow-node" style="--node-color:#64748B">
+        <div class="flow-node-icon">🔍</div>
+        <div class="flow-node-title">0. lsusb</div>
+        <div class="flow-node-desc">인식 확인</div>
+      </div>
+      <div class="flow-arrow"><svg width="34" height="24" viewBox="0 0 40 24"><path d="M0 12h30M24 4l8 8-8 8" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+      <div class="flow-node" style="--node-color:#2563EB">
+        <div class="flow-node-icon">🐍</div>
+        <div class="flow-node-title">1. test_flir.py</div>
+        <div class="flow-node-desc">접근 확인</div>
+      </div>
+      <div class="flow-arrow"><svg width="34" height="24" viewBox="0 0 40 24"><path d="M0 12h30M24 4l8 8-8 8" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+      <div class="flow-node" style="--node-color:#7C3AED">
+        <div class="flow-node-icon">📦</div>
+        <div class="flow-node-title">2. make</div>
+        <div class="flow-node-desc">드라이버 빌드</div>
+      </div>
+      <div class="flow-arrow"><svg width="34" height="24" viewBox="0 0 40 24"><path d="M0 12h30M24 4l8 8-8 8" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+      <div class="flow-node" style="--node-color:#D97706">
+        <div class="flow-node-icon">📺</div>
+        <div class="flow-node-title">3. modprobe</div>
+        <div class="flow-node-desc">가상 카메라</div>
+      </div>
+      <div class="flow-arrow"><svg width="34" height="24" viewBox="0 0 40 24"><path d="M0 12h30M24 4l8 8-8 8" stroke="#94A3B8" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+      <div class="flow-node" style="--node-color:#059669">
+        <div class="flow-node-icon">🔥</div>
+        <div class="flow-node-title">4. flirone + ffplay</div>
+        <div class="flow-node-desc">열화상 보기</div>
+      </div>
+    </div>
+    <div class="callout callout-info" style="margin-top:2rem;"><span class="callout-icon">🚀</span><span class="callout-content"><strong>다음 단계(Physical AI 연결):</strong> 열화상이 <code>/dev/video2</code>로 나오기 시작하면, 일반 웹캠처럼 OpenCV/ROS2/YOLO에서 그대로 읽을 수 있어요. <code>FLIR → /dev/video2 → ROS2 → YOLO → Physical AI</code> 파이프라인으로 이어집니다.</span></div>
+  </div>
+</section>
+
+<script>
+  document.querySelectorAll('.copy-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var cmd = btn.getAttribute('data-cmd');
+      var done = function () {
+        var original = btn.innerHTML;
+        btn.innerHTML = '✅ 복사됨';
+        btn.classList.add('copied');
+        setTimeout(function () { btn.innerHTML = original; btn.classList.remove('copied'); }, 1500);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(cmd).then(done).catch(function () { fallbackCopy(cmd, done); });
+      } else { fallbackCopy(cmd, done); }
+    });
+  });
+  function fallbackCopy(text, done) {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta); done();
+  }
+</script>
+
+</body>
+</html>

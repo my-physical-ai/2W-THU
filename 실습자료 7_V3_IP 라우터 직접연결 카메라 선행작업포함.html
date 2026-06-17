@@ -1,0 +1,1682 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>실습자료 2 V3 — IP 카메라 라우터 연결 (선행작업 포함)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --color-primary: #059669;
+  --color-primary-light: #D1FAE5;
+  --color-primary-dark: #047857;
+  --color-pre: #7C3AED;
+  --color-pre-light: #EDE9FE;
+  --color-pre-dark: #5B21B6;
+  --color-secondary: #2563EB;
+  --color-success: #059669;
+  --color-success-light: #D1FAE5;
+  --color-warning: #D97706;
+  --color-warning-light: #FEF3C7;
+  --color-danger: #DC2626;
+  --color-danger-light: #FEE2E2;
+  --color-surface: #F8FAFC;
+  --color-card: #FFFFFF;
+  --color-text: #1E293B;
+  --color-muted: #64748B;
+  --color-border: #E2E8F0;
+}
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+  color: var(--color-text);
+  background: var(--color-surface);
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+code, pre { font-family: 'JetBrains Mono', monospace; }
+.container { max-width: 920px; margin: 0 auto; padding: 0 1.5rem; }
+section { padding: 3rem 0; }
+.section-title { font-size: 1.85rem; font-weight: 700; margin-bottom: 0.5rem; }
+.section-lead { color: var(--color-muted); margin-bottom: 2rem; font-size: 1rem; }
+
+/* === 히어로 (두 단계 색상 그라데이션) === */
+.hero {
+  background: linear-gradient(135deg, #5B21B6 0%, #7C3AED 30%, #059669 70%, #047857 100%);
+  color: white;
+  padding: 4.5rem 0 3.5rem;
+  position: relative;
+  overflow: hidden;
+}
+.hero::after {
+  content: '🔄';
+  position: absolute;
+  font-size: 13rem;
+  right: 2%;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.08;
+}
+.hero .container { position: relative; z-index: 1; }
+.hero-tags { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.pill {
+  background: rgba(255,255,255,0.18);
+  border: 1px solid rgba(255,255,255,0.3);
+  padding: 0.35rem 0.95rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  backdrop-filter: blur(8px);
+}
+.hero-eyebrow {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  opacity: 0.9;
+  margin-bottom: 0.5rem;
+}
+.hero h1 { font-size: 2.6rem; font-weight: 900; line-height: 1.2; margin-bottom: 0.5rem; }
+.hero-subtitle { font-size: 1.1rem; margin-top: 1rem; opacity: 0.95; max-width: 720px; line-height: 1.7; }
+.hero-meta {
+  margin-top: 1.75rem;
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+  opacity: 0.95;
+}
+
+/* === 핵심 통찰 박스 === */
+.insight-box {
+  background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+  border-radius: 16px;
+  padding: 1.75rem 2rem;
+  margin-bottom: 2rem;
+  border: 1px solid #FBBF24;
+}
+.insight-box-title {
+  font-weight: 700;
+  color: #78350F;
+  font-size: 1.15rem;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.insight-box p { font-size: 0.97rem; line-height: 1.75; color: #78350F; }
+.insight-box p + p { margin-top: 0.6rem; }
+
+/* === Phase 구분 박스 === */
+.phase-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin: 2rem 0;
+}
+.phase-card {
+  border-radius: 14px;
+  padding: 1.5rem 1.75rem;
+  border: 2px solid;
+}
+.phase-pre {
+  background: linear-gradient(135deg, #F5F3FF, #EDE9FE);
+  border-color: var(--color-pre);
+}
+.phase-main {
+  background: linear-gradient(135deg, #ECFDF5, #D1FAE5);
+  border-color: var(--color-primary);
+}
+.phase-title {
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-bottom: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.phase-pre .phase-title { color: var(--color-pre-dark); }
+.phase-main .phase-title { color: var(--color-primary-dark); }
+.phase-content { font-size: 0.92rem; line-height: 1.7; }
+.phase-pre .phase-content { color: var(--color-pre-dark); }
+.phase-main .phase-content { color: var(--color-primary-dark); }
+.phase-content ul { margin-left: 1.2rem; margin-top: 0.4rem; }
+.phase-content li { margin-bottom: 0.25rem; }
+@media (max-width: 640px) {
+  .phase-comparison { grid-template-columns: 1fr; }
+}
+
+/* === Phase 헤더 (단계별 그룹 표시) === */
+.phase-header {
+  background: var(--phase-color, var(--color-pre));
+  color: white;
+  padding: 1.25rem 2rem;
+  border-radius: 16px 16px 0 0;
+  margin-top: 3rem;
+  margin-bottom: -1rem;
+  position: relative;
+  z-index: 1;
+}
+.phase-header-title {
+  font-weight: 700;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.phase-header-subtitle {
+  font-size: 0.88rem;
+  opacity: 0.9;
+  margin-top: 0.25rem;
+}
+
+/* === 플로우 다이어그램 === */
+.flow-diagram {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.4rem;
+  padding: 1.5rem 1rem;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  overflow-x: auto;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  margin-bottom: 2rem;
+}
+.flow-node {
+  background: var(--color-card);
+  border: 2px solid var(--node-color, var(--color-primary));
+  border-radius: 12px;
+  padding: 0.85rem 0.6rem;
+  text-align: center;
+  min-width: 92px;
+  flex-shrink: 0;
+}
+.flow-node-icon { font-size: 1.4rem; margin-bottom: 0.3rem; }
+.flow-node-title { font-weight: 700; font-size: 0.78rem; }
+.flow-node-desc { font-size: 0.68rem; color: var(--color-muted); margin-top: 0.15rem; }
+.flow-arrow { flex-shrink: 0; color: #94A3B8; font-weight: 700; }
+.flow-divider {
+  flex-shrink: 0;
+  padding: 0 0.4rem;
+  font-size: 1.6rem;
+  color: #94A3B8;
+}
+
+/* === 단계 카드 === */
+.step-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  overflow: hidden;
+  margin-bottom: 2.5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+.step-head {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem 2rem;
+  color: white;
+  background: var(--accent, linear-gradient(135deg, #7C3AED, #5B21B6));
+}
+.step-badge {
+  flex-shrink: 0;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  border: 2px solid rgba(255,255,255,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 1.35rem;
+}
+.step-emoji { font-size: 2rem; }
+.step-name { flex: 1; }
+.step-name-title { font-weight: 700; font-size: 1.3rem; line-height: 1.3; }
+.step-name-subtitle { font-weight: 400; font-size: 0.85rem; opacity: 0.9; margin-top: 0.2rem; }
+
+.step-body { padding: 2rem; }
+
+.why-box {
+  background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #FCD34D;
+}
+.why-title {
+  font-weight: 700;
+  color: #78350F;
+  margin-bottom: 0.6rem;
+  font-size: 1.02rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.why-content { font-size: 0.97rem; line-height: 1.75; color: #78350F; }
+
+.cmd-box {
+  background: #0F172A;
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  margin: 1.25rem 0;
+  position: relative;
+}
+.cmd-box-label {
+  color: #94A3B8;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+  font-family: 'JetBrains Mono', monospace;
+}
+.cmd-box code {
+  color: #E2E8F0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  display: block;
+  line-height: 1.7;
+  font-family: 'JetBrains Mono', monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.cmd-box .prompt { color: #4ADE80; user-select: none; margin-right: 0.5rem; }
+.cmd-box .opt { color: #FCD34D; }
+.cmd-box .str { color: #67E8F9; }
+.cmd-box .comment { color: #64748B; font-style: italic; }
+.copy-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: #E2E8F0;
+  border-radius: 8px;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.78rem;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+}
+.copy-btn:hover { background: rgba(255,255,255,0.22); }
+.copy-btn.copied { background: var(--color-success); border-color: var(--color-success); }
+
+.cmd-breakdown {
+  background: var(--color-surface);
+  border-radius: 14px;
+  padding: 1.5rem;
+  margin: 1.25rem 0;
+  border: 1px solid var(--color-border);
+}
+.cmd-breakdown-title {
+  font-weight: 700;
+  color: var(--color-text);
+  font-size: 1.02rem;
+  margin-bottom: 1rem;
+}
+.cmd-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.cmd-table tr td {
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.92rem;
+  vertical-align: top;
+}
+.cmd-table tr:last-child td { border-bottom: none; }
+.cmd-table td:first-child {
+  width: 35%;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--color-pre-dark);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.cmd-table td:last-child { color: var(--color-text); line-height: 1.65; }
+
+.output-box {
+  background: #0F172A;
+  color: #94A3B8;
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  margin: 1rem 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  line-height: 1.7;
+  overflow-x: auto;
+  border-left: 4px solid var(--color-pre);
+}
+.output-box .ok { color: #6EE7B7; }
+.output-box .ip { color: #FCD34D; }
+.output-box .key { color: #F472B6; }
+.output-box .comment { color: #64748B; font-style: italic; }
+.output-box .err { color: #FCA5A5; }
+.output-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-muted);
+  margin: 1.5rem 0 0.5rem;
+  font-weight: 700;
+}
+
+.interpret-box {
+  background: var(--color-pre-light);
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  margin: 1rem 0;
+  border-left: 4px solid var(--color-pre);
+}
+.interpret-title {
+  font-weight: 700;
+  color: var(--color-pre-dark);
+  font-size: 1rem;
+  margin-bottom: 0.6rem;
+}
+.interpret-list { list-style: none; padding: 0; }
+.interpret-list li {
+  padding: 0.4rem 0 0.4rem 1.5rem;
+  position: relative;
+  font-size: 0.94rem;
+  line-height: 1.65;
+  color: var(--color-pre-dark);
+}
+.interpret-list li::before {
+  content: "•";
+  position: absolute;
+  left: 0.5rem;
+  color: var(--color-pre);
+  font-weight: 700;
+}
+
+.analogy-box {
+  display: flex;
+  gap: 1.1rem;
+  padding: 1.35rem 1.5rem;
+  background: var(--color-pre-light);
+  border-radius: 14px;
+  border-left: 4px solid var(--color-pre);
+  margin: 1.25rem 0;
+}
+.analogy-icon { font-size: 2.2rem; flex-shrink: 0; }
+.analogy-title {
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--color-pre);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.4rem;
+}
+.analogy-text { line-height: 1.7; font-size: 0.95rem; color: var(--color-pre-dark); }
+
+.callout {
+  display: flex;
+  gap: 0.85rem;
+  padding: 1.1rem 1.35rem;
+  border-radius: 12px;
+  align-items: flex-start;
+  margin: 1.25rem 0;
+}
+.callout-icon { font-size: 1.35rem; flex-shrink: 0; padding-top: 0.05rem; }
+.callout-content { font-size: 0.95rem; line-height: 1.7; }
+.callout-tip { background: var(--color-success-light); border-left: 3px solid var(--color-success); color: #064E3B; }
+.callout-warning { background: var(--color-warning-light); border-left: 3px solid var(--color-warning); color: #78350F; }
+.callout-danger { background: var(--color-danger-light); border-left: 3px solid var(--color-danger); color: #7F1D1D; }
+.callout-info { background: var(--color-pre-light); border-left: 3px solid var(--color-pre); color: var(--color-pre-dark); }
+
+.next-step {
+  background: linear-gradient(135deg, var(--next-bg-1, #F5F3FF), var(--next-bg-2, #EDE9FE));
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  margin-top: 2rem;
+  border: 1px dashed var(--next-border, var(--color-pre));
+  text-align: center;
+}
+.next-step-text {
+  font-size: 0.95rem;
+  color: var(--next-color, var(--color-pre-dark));
+}
+.next-step-text strong { color: var(--next-color, var(--color-pre-dark)); }
+
+.data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 1.25rem 0;
+  background: var(--color-card);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  font-size: 0.9rem;
+}
+.data-table thead { background: var(--color-primary); color: white; }
+.data-table th { padding: 0.75rem 1rem; text-align: left; font-weight: 700; font-size: 0.88rem; }
+.data-table td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--color-border); }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table code { background: var(--color-surface); padding: 0.15rem 0.45rem; border-radius: 4px; font-size: 0.85rem; }
+
+.checklist {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 1.75rem;
+  margin-top: 1.5rem;
+}
+.checklist-title { font-weight: 700; margin-bottom: 1rem; color: var(--color-text); font-size: 1.1rem; }
+.checklist-item {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.6rem 0;
+  align-items: flex-start;
+  font-size: 0.95rem;
+  border-bottom: 1px dashed var(--color-border);
+}
+.checklist-item:last-child { border-bottom: none; }
+.checklist-box {
+  flex-shrink: 0;
+  width: 1.2rem;
+  height: 1.2rem;
+  border: 2px solid var(--color-border);
+  border-radius: 4px;
+  margin-top: 0.15rem;
+}
+
+.body-text {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--color-text);
+  margin-bottom: 1rem;
+}
+.body-text strong { color: var(--color-pre-dark); font-weight: 700; }
+
+@media (max-width: 768px) {
+  .hero h1 { font-size: 1.9rem; }
+  .hero-subtitle { font-size: 1rem; }
+  .hero::after { display: none; }
+  .step-body { padding: 1.5rem; }
+  .step-head { padding: 1.25rem; }
+  .flow-diagram { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============== 히어로 ============== -->
+<header class="hero">
+  <div class="container">
+    <div class="hero-tags">
+      <span class="pill">📷 IP Camera</span>
+      <span class="pill">📡 라우터 연결</span>
+      <span class="pill">🔄 선행작업 → 본작업</span>
+      <span class="pill">⌨️ 명령어 학습</span>
+    </div>
+    <div class="hero-eyebrow">실습자료 2 · 단계별 풀이 V3 (선행작업 포함)</div>
+    <h1>IP 카메라 라우터 연결</h1>
+    <p class="hero-subtitle">
+      <strong>NUC 직결로 먼저 카메라 IP를 라우터 대역으로 변경한 후</strong>,
+      라우터로 옮겨 한 번에 통합 망에 합류시키는 단계별 가이드.
+      시행착오 없이 첫 시도에 성공하는 흐름입니다.
+    </p>
+    <div class="hero-meta">
+      <div>⏱️ 예상 소요: 60~90분</div>
+      <div>🎯 난이도: 중급</div>
+      <div>📚 10단계 (선행 6 + 본작업 4)</div>
+    </div>
+  </div>
+</header>
+
+<!-- ============== 핵심 통찰 ============== -->
+<section>
+  <div class="container">
+    <div class="insight-box">
+      <div class="insight-box-title">💡 V3의 핵심 통찰 — 왜 선행작업이 중요한가?</div>
+      <p>
+        <strong>"카메라를 라우터에 연결한 다음 IP를 찾는다"</strong>는 일반적 접근은
+        카메라가 고정 IP를 유지하고 있으면 라우터 망에서 보이지 않는 함정에 빠집니다.
+      </p>
+      <p>
+        V3는 더 안전한 순서를 제안합니다:
+        <strong>먼저 NUC 직결로 카메라 웹 UI에 접속하여 IP를 라우터 대역의 고정 IP로 변경 + 비밀번호 강화</strong>를
+        모두 끝낸 후, 카메라를 라우터로 옮깁니다. 이렇게 하면 시행착오 없이 한 번에 성공해요.
+      </p>
+    </div>
+
+    <h2 class="section-title">🎯 이 실습의 두 단계 (Phase) 구조</h2>
+
+    <div class="phase-comparison">
+      <div class="phase-card phase-pre">
+        <div class="phase-title">🟣 Phase 1 — 선행작업 (NUC 직결 상태)</div>
+        <div class="phase-content">
+          <strong>단계 1~6:</strong> 카메라를 NUC에 임시 직결한 상태에서 사전 설정을 완료
+          <ul>
+            <li>카메라 현재 IP 발견</li>
+            <li>NUC을 카메라 대역으로 임시 설정</li>
+            <li>카메라 웹 UI 접속</li>
+            <li><strong>⭐ IP를 라우터 대역 고정 IP로 변경</strong></li>
+            <li>비밀번호 강화 (보안)</li>
+          </ul>
+        </div>
+      </div>
+      <div class="phase-card phase-main">
+        <div class="phase-title">🟢 Phase 2 — 본작업 (라우터 통합)</div>
+        <div class="phase-content">
+          <strong>단계 7~10:</strong> 카메라를 라우터로 옮기고 한 번에 성공
+          <ul>
+            <li>카메라 케이블 라우터로 이동</li>
+            <li>NUC 라우터 망 연결 확인</li>
+            <li>arp-scan으로 한 번에 발견 ✅</li>
+            <li>RTSP 검증 + 멀티 PC 시청</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">🎓</span>
+      <div class="callout-content"><strong>학습 효과:</strong> 이 흐름은 빅맥님이 실제 경험하신 "카메라 안 보임" 시행착오를 학생들이 겪지 않도록 미리 차단합니다. 분기 처리 없이 깔끔한 선형 진행이 가능해요.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== 10단계 흐름도 ============== -->
+<section style="background: var(--color-card);">
+  <div class="container">
+    <h2 class="section-title">한눈에 보기 — 10단계 흐름</h2>
+    <p class="section-lead">두 가지 색상으로 Phase 구분: 보라(선행) → 초록(본작업)</p>
+
+    <div class="flow-diagram">
+      <div class="flow-node" style="--node-color: #7C3AED">
+        <div class="flow-node-icon">📋</div>
+        <div class="flow-node-title">1. 직결</div>
+        <div class="flow-node-desc">+인터페이스</div>
+      </div>
+      <div class="flow-arrow">▶</div>
+      <div class="flow-node" style="--node-color: #7C3AED">
+        <div class="flow-node-icon">🔍</div>
+        <div class="flow-node-title">2. IP 발견</div>
+        <div class="flow-node-desc">tcpdump</div>
+      </div>
+      <div class="flow-arrow">▶</div>
+      <div class="flow-node" style="--node-color: #7C3AED">
+        <div class="flow-node-icon">⚙️</div>
+        <div class="flow-node-title">3. NUC IP</div>
+        <div class="flow-node-desc">임시 설정</div>
+      </div>
+      <div class="flow-arrow">▶</div>
+      <div class="flow-node" style="--node-color: #7C3AED">
+        <div class="flow-node-icon">🔐</div>
+        <div class="flow-node-title">4. 웹 접속</div>
+        <div class="flow-node-desc">카메라 UI</div>
+      </div>
+      <div class="flow-arrow">▶</div>
+      <div class="flow-node" style="--node-color: #7C3AED">
+        <div class="flow-node-icon">⭐</div>
+        <div class="flow-node-title">5. IP 변경</div>
+        <div class="flow-node-desc">라우터 대역</div>
+      </div>
+      <div class="flow-arrow">▶</div>
+      <div class="flow-node" style="--node-color: #7C3AED">
+        <div class="flow-node-icon">🛡️</div>
+        <div class="flow-node-title">6. 비번 변경</div>
+        <div class="flow-node-desc">보안</div>
+      </div>
+      <div class="flow-divider">┃</div>
+      <div class="flow-node" style="--node-color: #059669">
+        <div class="flow-node-icon">🔌</div>
+        <div class="flow-node-title">7. 라우터로</div>
+        <div class="flow-node-desc">케이블 이동</div>
+      </div>
+      <div class="flow-arrow">▶</div>
+      <div class="flow-node" style="--node-color: #059669">
+        <div class="flow-node-icon">📡</div>
+        <div class="flow-node-title">8. NUC 망</div>
+        <div class="flow-node-desc">확인</div>
+      </div>
+      <div class="flow-arrow">▶</div>
+      <div class="flow-node" style="--node-color: #059669">
+        <div class="flow-node-icon">✅</div>
+        <div class="flow-node-title">9. 한 번에</div>
+        <div class="flow-node-desc">arp-scan</div>
+      </div>
+      <div class="flow-arrow">▶</div>
+      <div class="flow-node" style="--node-color: #059669">
+        <div class="flow-node-icon">👥</div>
+        <div class="flow-node-title">10. 시청</div>
+        <div class="flow-node-desc">멀티 PC</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====================================================== -->
+<!-- ============== Phase 1 시작 헤더 ============== -->
+<!-- ====================================================== -->
+<section style="background: var(--color-card);">
+  <div class="container">
+    <div class="phase-header" style="--phase-color: linear-gradient(135deg, #7C3AED, #5B21B6);">
+      <div class="phase-header-title">🟣 Phase 1 — 선행작업 (단계 1~6)</div>
+      <div class="phase-header-subtitle">NUC 직결 상태에서 카메라 IP와 비밀번호를 미리 설정합니다</div>
+    </div>
+
+<!-- ====================================================== -->
+<!-- ============== 단계 1 — 직결 + 인터페이스 ============== -->
+<!-- ====================================================== -->
+    <div class="step-card">
+      <div class="step-head" style="--accent: linear-gradient(135deg, #7C3AED, #5B21B6);">
+        <div class="step-badge">1</div>
+        <div class="step-emoji">📋</div>
+        <div class="step-name">
+          <div class="step-name-title">NUC ↔ 카메라 직결 + 인터페이스 확인</div>
+          <div class="step-name-subtitle">선행작업의 시작 — 카메라를 NUC에 임시 연결</div>
+        </div>
+      </div>
+
+      <div class="step-body">
+
+        <div class="why-box">
+          <div class="why-title">🤔 왜 라우터에 바로 안 꽂고 NUC에 먼저?</div>
+          <div class="why-content">
+            카메라가 현재 어떤 IP를 갖고 있는지 모르는 상태에서 라우터에 바로 꽂으면, 카메라가
+            <strong>고정 IP를 유지</strong>하는 경우 라우터 망에서 찾을 수 없습니다(빅맥님이 실제 경험하신 함정).
+            그래서 먼저 NUC과 일대일로 연결한 격리망에서 <strong>카메라 IP를 정확히 알고, 우리가 원하는 라우터 대역 IP로 미리 변경</strong>한 다음 라우터로 옮기는 것이 훨씬 안전합니다.
+          </div>
+        </div>
+
+        <div class="callout callout-warning">
+          <span class="callout-icon">⚠️</span>
+          <div class="callout-content">
+            <strong>사전 준비 — 물리적 작업:</strong><br>
+            ① 카메라 12V 어댑터 연결<br>
+            ② 카메라 RJ45 ↔ <strong>NUC eno1에 랜선 직접 연결</strong> (라우터 아님!)<br>
+            ③ 카메라 전원 ON → RJ45 LED 녹색 깜빡임 확인
+          </div>
+        </div>
+
+        <div class="cmd-box">
+          <button class="copy-btn" data-cmd="nmcli device status">📋 복사</button>
+          <div class="cmd-box-label">⌨️ 터미널에 입력</div>
+          <code><span class="prompt">$</span>nmcli device status</code>
+        </div>
+
+        <div class="cmd-breakdown">
+          <div class="cmd-breakdown-title">📖 명령어 분해</div>
+          <table class="cmd-table">
+            <tr><td>nmcli</td><td>NetworkManager 명령어 도구.</td></tr>
+            <tr><td>device status</td><td>모든 네트워크 장치의 현재 상태 출력.</td></tr>
+          </table>
+        </div>
+
+        <div class="output-label">🖥️ 예상 출력</div>
+        <div class="output-box">
+DEVICE             TYPE      STATE           CONNECTION
+wlp0s20f3          wifi      연결됨          NTH215
+wlx002e2d40106e    wifi      연결됨          zeta_amr_rnd 3
+<span class="ip">eno1</span>               <span class="key">ethernet</span>  <span class="ok">연결됨</span>         유선 연결 1
+lo                 loopback  연결됨 (외부)   lo</div>
+
+        <div class="interpret-box">
+          <div class="interpret-title">💡 확인 사항</div>
+          <ul class="interpret-list">
+            <li><strong>TYPE이 'ethernet'</strong>인 줄의 DEVICE 이름 메모 (보통 eno1)</li>
+            <li><strong>STATE가 '연결됨'</strong>이면 OK — 카메라와 케이블 연결 정상</li>
+            <li>WiFi(wlx, wlp)는 무시 — 본작업(Phase 2)에서 사용</li>
+          </ul>
+        </div>
+
+        <div class="callout callout-tip">
+          <span class="callout-icon">📝</span>
+          <div class="callout-content"><strong>메모:</strong> 이더넷 인터페이스 이름 ____________ (예: eno1)</div>
+        </div>
+
+        <div class="next-step" style="--next-bg-1: #F5F3FF; --next-bg-2: #EDE9FE; --next-border: #7C3AED; --next-color: #5B21B6;">
+          <div class="next-step-text">✅ 인터페이스 확인되었나요? &nbsp;<strong>→ 단계 2로 이동</strong></div>
+        </div>
+
+      </div>
+    </div>
+
+<!-- ====================================================== -->
+<!-- ============== 단계 2 — 카메라 IP 발견 ============== -->
+<!-- ====================================================== -->
+    <div class="step-card">
+      <div class="step-head" style="--accent: linear-gradient(135deg, #7C3AED, #5B21B6);">
+        <div class="step-badge">2</div>
+        <div class="step-emoji">🔍</div>
+        <div class="step-name">
+          <div class="step-name-title">카메라 현재 IP 발견 (tcpdump)</div>
+          <div class="step-name-subtitle">카메라가 부팅 시 외치는 신호를 청취</div>
+        </div>
+      </div>
+
+      <div class="step-body">
+
+        <div class="why-box">
+          <div class="why-title">🤔 카메라 IP를 모르는데 어떻게 찾나요?</div>
+          <div class="why-content">
+            카메라가 부팅하거나 케이블 연결 직후 자동으로 보내는 <strong>ARP/DHCP 브로드캐스트 신호</strong>를 tcpdump으로 청취합니다.
+            카메라는 "저 여기 있어요, IP는 192.168.X.Y에요" 같은 자기소개를 자동으로 합니다.
+            이를 가로채면 카메라의 현재 IP를 알 수 있어요.
+          </div>
+        </div>
+
+        <div class="cmd-box">
+          <button class="copy-btn" data-cmd="sudo tcpdump -i eno1 -n -e 'arp or (udp port 67 or udp port 68)'">📋 복사</button>
+          <div class="cmd-box-label">⌨️ 터미널에 입력 (eno1은 단계 1에서 확인한 이름)</div>
+          <code><span class="prompt">$</span>sudo tcpdump <span class="opt">-i</span> eno1 <span class="opt">-n</span> <span class="opt">-e</span> <span class="str">'arp or (udp port 67 or udp port 68)'</span></code>
+        </div>
+
+        <div class="cmd-breakdown">
+          <div class="cmd-breakdown-title">📖 명령어 분해 (자세한 설명은 실습자료 1 V2 단계 2 참조)</div>
+          <table class="cmd-table">
+            <tr><td>sudo tcpdump</td><td>네트워크 패킷 가로채기 (관리자 권한 필요).</td></tr>
+            <tr><td>-i eno1</td><td>어떤 인터페이스에서 들을지 지정.</td></tr>
+            <tr><td>-n -e</td><td>IP를 그대로 표시(-n), MAC도 표시(-e).</td></tr>
+            <tr><td>'arp or ...'</td><td>ARP 또는 DHCP 패킷만 필터링.</td></tr>
+          </table>
+        </div>
+
+        <div class="callout callout-tip">
+          <span class="callout-icon">💡</span>
+          <div class="callout-content"><strong>팁:</strong> 아무 출력이 없으면 <strong>카메라 전원을 잠시 OFF → ON</strong>. 부팅 직후 즉시 외치는 신호가 잡힙니다. 30초 정도 후 <kbd>Ctrl+C</kbd>로 중단.</div>
+        </div>
+
+        <div class="output-label">🖥️ 예상 출력</div>
+        <div class="output-box">
+listening on eno1, link-type EN10MB (Ethernet)
+14:23:01.234 <span class="key">f0:00:00:99:e0:85</span> > ff:ff:ff:ff:ff:ff, ARP,
+    Request who-has 192.168.1.1 tell <span class="ip">192.168.1.123</span>, length 46
+^C
+1 packet captured</div>
+
+        <div class="interpret-box">
+          <div class="interpret-title">💡 출력에서 추출할 정보</div>
+          <ul class="interpret-list">
+            <li><strong>카메라 MAC</strong>: f0:00:00:99:e0:85 (분홍색)</li>
+            <li><strong>카메라 현재 IP</strong>: tell 뒤의 IP (노란색) = 192.168.1.123</li>
+            <li>이 IP가 카메라의 현재 위치이며, 단계 3, 4에서 사용</li>
+          </ul>
+        </div>
+
+        <div class="callout callout-tip">
+          <span class="callout-icon">📝</span>
+          <div class="callout-content"><strong>메모:</strong><br>
+          ▸ 카메라 현재 IP: ____________________ (예: 192.168.1.123)<br>
+          ▸ 카메라 MAC: ____________________ (예: f0:00:00:99:e0:85)</div>
+        </div>
+
+        <div class="next-step" style="--next-bg-1: #F5F3FF; --next-bg-2: #EDE9FE; --next-border: #7C3AED; --next-color: #5B21B6;">
+          <div class="next-step-text">✅ 카메라 IP 발견하셨나요? &nbsp;<strong>→ 단계 3에서 NUC을 같은 대역으로 설정</strong></div>
+        </div>
+
+      </div>
+    </div>
+
+<!-- ====================================================== -->
+<!-- ============== 단계 3 — NUC IP 임시 설정 ============== -->
+<!-- ====================================================== -->
+    <div class="step-card">
+      <div class="step-head" style="--accent: linear-gradient(135deg, #7C3AED, #5B21B6);">
+        <div class="step-badge">3</div>
+        <div class="step-emoji">⚙️</div>
+        <div class="step-name">
+          <div class="step-name-title">NUC을 카메라 대역으로 임시 IP 설정</div>
+          <div class="step-name-subtitle">웹 UI 접속을 위한 일시적 NUC IP 변경</div>
+        </div>
+      </div>
+
+      <div class="step-body">
+
+        <div class="why-box">
+          <div class="why-title">🤔 NUC IP를 왜 바꿔야 하나요?</div>
+          <div class="why-content">
+            카메라가 192.168.1.123에 있고 NUC이 다른 대역(예: 192.168.50.x)이면 직접 통신이 불가능합니다.
+            카메라 웹 UI에 접속하려면 NUC도 같은 대역(192.168.1.x)에 임시로 들어가야 해요.
+            이 설정은 <strong>"선행작업이 끝나면 곧 원복할 임시 설정"</strong>입니다.
+            본작업(Phase 2)에서 라우터 망으로 갈 때 다시 DHCP로 돌립니다.
+          </div>
+        </div>
+
+        <p class="body-text" style="font-weight: 700;">▶ 명령어 1: NUC IP를 카메라 대역으로</p>
+
+        <div class="cmd-box">
+          <button class="copy-btn" data-cmd='sudo nmcli connection modify "유선 연결 1" ipv4.method manual ipv4.addresses 192.168.1.50/24 ipv4.gateway "" ipv4.dns ""'>📋 복사</button>
+          <div class="cmd-box-label">⌨️ NUC eno1 임시 IP 설정</div>
+          <code><span class="prompt">$</span>sudo nmcli connection modify <span class="str">"유선 연결 1"</span> \
+    <span class="opt">ipv4.method</span> manual \
+    <span class="opt">ipv4.addresses</span> 192.168.1.50/24 \
+    <span class="opt">ipv4.gateway</span> <span class="str">""</span> \
+    <span class="opt">ipv4.dns</span> <span class="str">""</span></code>
+        </div>
+
+        <p class="body-text" style="font-weight: 700; margin-top: 1.5rem;">▶ 명령어 2: 설정 적용</p>
+
+        <div class="cmd-box">
+          <button class="copy-btn" data-cmd='sudo nmcli connection up "유선 연결 1"'>📋 복사</button>
+          <div class="cmd-box-label">⌨️ 재연결로 적용</div>
+          <code><span class="prompt">$</span>sudo nmcli connection up <span class="str">"유선 연결 1"</span></code>
+        </div>
+
+        <p class="body-text" style="font-weight: 700; margin-top: 1.5rem;">▶ 명령어 3: 통신 확인</p>
+
+        <div class="cmd-box">
+          <button class="copy-btn" data-cmd="ping -c 3 192.168.1.123">📋 복사</button>
+          <div class="cmd-box-label">⌨️ 카메라 ping</div>
+          <code><span class="prompt">$</span>ping <span class="opt">-c</span> 3 192.168.1.123</code>
+        </div>
+
+        <div class="output-label">🖥️ ping 예상 출력 (성공)</div>
+        <div class="output-box">
+PING 192.168.1.123 (192.168.1.123) 56(84) bytes of data.
+64 bytes from <span class="ip">192.168.1.123</span>: icmp_seq=1 ttl=64 <span class="ok">time=0.5 ms</span>
+64 bytes from <span class="ip">192.168.1.123</span>: icmp_seq=2 ttl=64 <span class="ok">time=0.4 ms</span>
+64 bytes from <span class="ip">192.168.1.123</span>: icmp_seq=3 ttl=64 <span class="ok">time=0.5 ms</span>
+
+3 packets transmitted, <span class="ok">3 received, 0% packet loss</span></div>
+
+        <div class="interpret-box">
+          <div class="interpret-title">💡 결과 해석</div>
+          <ul class="interpret-list">
+            <li>"3 received, 0% packet loss" → 완벽한 통신 ✅</li>
+            <li>"Destination Host Unreachable" → 카메라 IP 오류 (단계 2 재확인)</li>
+            <li>"100% packet loss" → NUC IP 설정 미적용 (명령어 1, 2 재실행)</li>
+          </ul>
+        </div>
+
+        <div class="callout callout-info">
+          <span class="callout-icon">📖</span>
+          <div class="callout-content"><strong>자세한 설명 필요시:</strong> 이 단계의 명령어들에 대한 자세한 옵션 분해와 의미는 <strong>실습자료 1 V2의 단계 4~7</strong>에 풀이되어 있습니다. 동일한 명령어이므로 거기를 참조하세요.</div>
+        </div>
+
+        <div class="next-step" style="--next-bg-1: #F5F3FF; --next-bg-2: #EDE9FE; --next-border: #7C3AED; --next-color: #5B21B6;">
+          <div class="next-step-text">✅ ping 성공하셨나요? &nbsp;<strong>→ 단계 4에서 카메라 웹 UI 접속</strong></div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ====================================================== -->
+<!-- ============== 단계 4 — 카메라 웹 UI 접속 ============== -->
+<!-- ====================================================== -->
+<section>
+  <div class="container">
+
+    <div class="step-card">
+      <div class="step-head" style="--accent: linear-gradient(135deg, #7C3AED, #5B21B6);">
+        <div class="step-badge">4</div>
+        <div class="step-emoji">🔐</div>
+        <div class="step-name">
+          <div class="step-name-title">브라우저로 카메라 웹 UI 접속</div>
+          <div class="step-name-subtitle">관리 페이지 진입 — 단계 5, 6의 변경 작업 준비</div>
+        </div>
+      </div>
+
+      <div class="step-body">
+
+        <div class="why-box">
+          <div class="why-title">🤔 명령어가 아니라 웹 UI를 쓰나요?</div>
+          <div class="why-content">
+            카메라의 IP 설정과 비밀번호 변경은 명령어가 아닌 <strong>카메라 자체의 웹 인터페이스</strong>를 통해서만 가능합니다.
+            카메라는 서버 역할을 하며, 브라우저가 클라이언트가 되어 카메라 내부 설정을 변경하는 방식이에요.
+            대부분의 IP 카메라가 이 방식을 사용합니다.
+          </div>
+        </div>
+
+        <div class="cmd-box">
+          <button class="copy-btn" data-cmd="firefox http://192.168.1.123 &">📋 복사</button>
+          <div class="cmd-box-label">⌨️ 브라우저 실행 (Firefox/Chrome 등)</div>
+          <code><span class="prompt">$</span>firefox http://192.168.1.123 <span class="opt">&</span>
+   <span class="comment"># 또는 브라우저 직접 열고 주소창에 입력: http://192.168.1.123</span></code>
+        </div>
+
+        <div class="cmd-breakdown">
+          <div class="cmd-breakdown-title">📖 URL 구조</div>
+          <table class="cmd-table">
+            <tr><td>http://</td><td>웹 프로토콜 (HTTPS가 아닌 HTTP — 카메라 내부 통신).</td></tr>
+            <tr><td>192.168.1.123</td><td>카메라 현재 IP (단계 2에서 발견).</td></tr>
+            <tr><td>&</td><td>백그라운드 실행 — 터미널을 다시 사용 가능하게 함.</td></tr>
+          </table>
+        </div>
+
+        <div class="output-label">🖥️ 브라우저 화면 (예상)</div>
+        <div class="output-box">
+┌─────────────────────────────────┐
+│  ╔═══════════════════════════╗  │
+│  ║  Camera Login             ║  │
+│  ║                           ║  │
+│  ║  Username: [admin    ]    ║  │
+│  ║  Password: [..........]   ║  │
+│  ║                           ║  │
+│  ║       [ Login ]           ║  │
+│  ╚═══════════════════════════╝  │
+└─────────────────────────────────┘
+<span class="comment"># 카메라 모델마다 다르지만 비슷한 로그인 화면</span></div>
+
+        <p class="body-text" style="font-weight: 700; margin-top: 1.5rem;">▶ 기본 로그인 정보 (공장 초기값)</p>
+
+        <table class="data-table">
+          <thead><tr><th>순서</th><th>사용자명</th><th>비밀번호</th><th>비고</th></tr></thead>
+          <tbody>
+            <tr><td>1순위</td><td><code>admin</code></td><td><code>123456</code></td><td>가장 흔함</td></tr>
+            <tr><td>2순위</td><td><code>admin</code></td><td><code>admin</code></td><td>두 번째로 흔함</td></tr>
+            <tr><td>3순위</td><td><code>admin</code></td><td>(공란)</td><td>일부 카메라</td></tr>
+            <tr><td>4순위</td><td><code>admin</code></td><td><code>password</code></td><td>드물지만 존재</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout callout-warning">
+          <span class="callout-icon">🦊</span>
+          <div class="callout-content"><strong>Firefox에서 페이지 안 열림?</strong> HTTPS 강제 변환 때문일 수 있어요. <code>about:preferences#privacy</code> 접속 → "HTTPS 전용 모드" 끄기 → 다시 시도.</div>
+        </div>
+
+        <div class="next-step" style="--next-bg-1: #F5F3FF; --next-bg-2: #EDE9FE; --next-border: #7C3AED; --next-color: #5B21B6;">
+          <div class="next-step-text">✅ 로그인 성공 → 카메라 관리 페이지 진입? &nbsp;<strong>→ 단계 5에서 IP 변경 ⭐</strong></div>
+        </div>
+
+      </div>
+    </div>
+
+<!-- ====================================================== -->
+<!-- ============== 단계 5 — IP 변경 ⭐ 핵심 ============== -->
+<!-- ====================================================== -->
+    <div class="step-card">
+      <div class="step-head" style="--accent: linear-gradient(135deg, #DC2626, #991B1B);">
+        <div class="step-badge">5</div>
+        <div class="step-emoji">⭐</div>
+        <div class="step-name">
+          <div class="step-name-title">⭐ 카메라 IP를 라우터 대역 고정 IP로 변경</div>
+          <div class="step-name-subtitle">V3의 핵심 단계 — 라우터로 이동하기 전에 미리 IP 변경</div>
+        </div>
+      </div>
+
+      <div class="step-body">
+
+        <div class="why-box">
+          <div class="why-title">🤔 이 단계가 V3의 핵심인 이유</div>
+          <div class="why-content">
+            카메라가 지금 192.168.1.123이라는 옛 IP를 갖고 있는데,
+            라우터 망은 192.168.50.x 대역입니다. 카메라가 이 옛 IP를 유지한 채 라우터에 연결되면
+            라우터와 통신이 안 되어 찾을 수 없습니다 (빅맥님이 V1, V2에서 경험하신 함정).
+            <br><br>
+            <strong>V3의 해결책</strong>: 카메라가 아직 NUC 직결 상태일 때 IP를 미리
+            <strong>라우터 대역의 고정 IP(예: 192.168.50.123)</strong>로 바꿔둡니다.
+            그러면 라우터에 연결되자마자 정상적으로 통신 가능합니다.
+          </div>
+        </div>
+
+        <div class="analogy-box">
+          <div class="analogy-icon">🚚</div>
+          <div>
+            <div class="analogy-title">쉽게 말하면</div>
+            <p class="analogy-text">"<strong>이사 가기 전에 새 주소를 미리 등록</strong>"하는 것입니다. 옛 집(192.168.1.123)에 살면서 새 동네(192.168.50.x) 주소(192.168.50.123)를 미리 정해놓고, 그 다음 새 집으로 이사해요. 그러면 이사하자마자 새 주소로 모든 우편이 정상 도착합니다.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <span class="callout-icon">⚠️</span>
+          <div class="callout-content"><strong>중요한 사전 정보 확인:</strong> 카메라를 옮길 라우터의 IP 대역을 미리 알아야 합니다. 보통 라우터 관리 페이지에서 확인 가능하며, 흔한 대역은 192.168.0.x, 192.168.1.x, 192.168.50.x 등입니다.</div>
+        </div>
+
+        <p class="body-text" style="font-weight: 700;">▶ 작업 1: 카메라 웹 UI에서 네트워크 설정 메뉴로 이동</p>
+
+        <p class="body-text">메뉴 경로: <strong>시스템(System) → 네트워크(Network) → IPv4 설정</strong></p>
+        <p class="body-text" style="color: var(--color-muted); font-size: 0.9rem;">※ 카메라 모델에 따라 메뉴명이 약간 다를 수 있음: "네트워크 → TCP/IP 설정", "환경설정 → 네트워크" 등</p>
+
+        <p class="body-text" style="font-weight: 700; margin-top: 1.5rem;">▶ 작업 2: 고정 IP 모드로 설정</p>
+
+        <div class="output-label">📋 설정값 입력 (라우터 대역에 맞춰서)</div>
+        <div class="output-box">
+시스템 → 네트워크 → IPv4 설정
+
+  IP 모드:      <span class="key">정적 / Static / 수동</span>       <span class="comment"># DHCP가 아님!</span>
+
+  IP 주소:      <span class="ip">192.168.50.123</span>            <span class="comment"># ⭐ 라우터 대역 (50)으로 변경</span>
+  서브넷 마스크: 255.255.255.0
+  게이트웨이:    <span class="ip">192.168.50.1</span>              <span class="comment"># 라우터 IP (보통 .1)</span>
+  주 DNS:       <span class="ip">192.168.50.1</span>              <span class="comment"># 또는 8.8.8.8 (구글)</span>
+  보조 DNS:     8.8.4.4                       <span class="comment"># 선택사항</span>
+
+[저장 / Save]</div>
+
+        <div class="cmd-breakdown">
+          <div class="cmd-breakdown-title">📖 각 항목의 의미</div>
+          <table class="cmd-table">
+            <tr><td>IP 모드: 정적</td><td>DHCP가 아닌 우리가 지정한 IP를 영구 사용. 라우터가 다른 IP를 부여하려 해도 거부.</td></tr>
+            <tr><td>IP 주소: 192.168.50.123</td><td>라우터 대역(50)에 속한 IP. 끝자리(123)는 다른 기기와 겹치지 않게 선택. 100~200 범위가 안전.</td></tr>
+            <tr><td>서브넷 마스크: 255.255.255.0</td><td>"/24"의 다른 표현. 같은 대역의 범위 (192.168.50.0~255).</td></tr>
+            <tr><td>게이트웨이: 192.168.50.1</td><td>외부로 나갈 때 거치는 라우터의 IP. 대부분 .1번.</td></tr>
+            <tr><td>DNS</td><td>도메인을 IP로 변환하는 서버. 라우터(.1) 또는 구글(8.8.8.8) 사용.</td></tr>
+          </table>
+        </div>
+
+        <p class="body-text" style="font-weight: 700; margin-top: 1.5rem;">▶ 작업 3: 저장 → 카메라 자동 재부팅</p>
+
+        <div class="callout callout-warning">
+          <span class="callout-icon">⏳</span>
+          <div class="callout-content"><strong>저장 직후 일어나는 일:</strong>
+          <ol style="margin: 0.5rem 0 0 1.2rem;">
+            <li>카메라가 새 IP 적용을 위해 자동 재부팅 (30초~1분)</li>
+            <li>재부팅 후 카메라는 192.168.50.123으로 변경됨</li>
+            <li>현재 브라우저 페이지는 더 이상 접속 안 됨 (정상)</li>
+            <li>NUC도 192.168.1.50/24이라 새 IP와 통신 불가 (정상)</li>
+          </ol></div>
+        </div>
+
+        <p class="body-text" style="font-weight: 700; margin-top: 1.5rem;">▶ 작업 4 (선택): 새 IP로 ping 테스트</p>
+
+        <p class="body-text">새 IP(192.168.50.123)는 NUC의 현재 IP(192.168.1.50)와 다른 대역이라 현재는 ping이 안 됩니다. 이는 정상이에요. 카메라가 변경된 IP를 잘 받았는지 확인하려면 NUC을 잠시 192.168.50.50으로 바꾸고 ping할 수 있지만, 본작업(Phase 2)에서 어차피 확인할 것이라 생략해도 됩니다.</p>
+
+        <div class="callout callout-tip">
+          <span class="callout-icon">📝</span>
+          <div class="callout-content"><strong>메모하세요:</strong><br>
+          ▸ 카메라 새 IP: ____________________ (예: 192.168.50.123) ⭐ 핵심!<br>
+          ▸ 라우터 IP: ____________________ (예: 192.168.50.1)</div>
+        </div>
+
+        <div class="next-step" style="--next-bg-1: #FEE2E2; --next-bg-2: #FECACA; --next-border: #DC2626; --next-color: #7F1D1D;">
+          <div class="next-step-text">✅ 새 IP 설정 + 저장 완료? &nbsp;<strong>→ 단계 6에서 비밀번호 강화</strong></div>
+        </div>
+
+      </div>
+    </div>
+
+<!-- ====================================================== -->
+<!-- ============== 단계 6 — 비밀번호 변경 ============== -->
+<!-- ====================================================== -->
+    <div class="step-card">
+      <div class="step-head" style="--accent: linear-gradient(135deg, #DC2626, #991B1B);">
+        <div class="step-badge">6</div>
+        <div class="step-emoji">🛡️</div>
+        <div class="step-name">
+          <div class="step-name-title">⚠️ 비밀번호 변경 (필수)</div>
+          <div class="step-name-subtitle">선행작업의 마지막 — 라우터로 옮기기 전에 보안 강화</div>
+        </div>
+      </div>
+
+      <div class="step-body">
+
+        <div class="why-box">
+          <div class="why-title">🤔 왜 라우터로 옮기기 전에 비번을 변경?</div>
+          <div class="why-content">
+            라우터에 연결되는 순간 카메라는 같은 망의 <strong>모든 기기로부터 접근 가능</strong>해집니다.
+            만약 공장 초기 비밀번호(123456) 그대로라면 같은 WiFi에 접속한 누구나 카메라 영상을 볼 수 있어요.
+            <strong>NUC 직결 상태(격리망)일 때 미리 비밀번호를 강화</strong>해두면, 라우터에 옮긴 직후부터 보안된 상태로 시작합니다.
+          </div>
+        </div>
+
+        <div class="callout callout-warning">
+          <span class="callout-icon">⚠️</span>
+          <div class="callout-content"><strong>비번 변경 전 NUC IP 임시 원복:</strong> 단계 5에서 카메라가 192.168.50.123으로 변경되었으므로, 웹 UI 재접속을 위해 NUC을 같은 대역으로 잠시 바꿔야 합니다. 또는 NUC을 192.168.50.x로 임시 설정 후 새 IP로 접속.<br><br>
+          <strong>대안:</strong> 단계 5 직전에(IP 변경 화면 진입 직후) 같은 페이지에서 비밀번호도 함께 변경 → 한 번에 끝내기.</div>
+        </div>
+
+        <p class="body-text" style="font-weight: 700;">▶ 권장 방법: 단계 5와 6을 한 번에 처리</p>
+
+        <div class="callout callout-tip">
+          <span class="callout-icon">💡</span>
+          <div class="callout-content"><strong>효율적인 작업 순서:</strong>
+          <ol style="margin: 0.5rem 0 0 1.2rem;">
+            <li>현재 IP(192.168.1.123)로 웹 UI 접속 중일 때</li>
+            <li><strong>먼저 비밀번호 변경</strong> (시스템 → 사용자 관리)</li>
+            <li><strong>그 다음 IP 변경</strong> (시스템 → 네트워크)</li>
+            <li>저장 → 카메라 재부팅 → IP 변경 + 비번 변경 동시 적용</li>
+          </ol></div>
+        </div>
+
+        <p class="body-text" style="font-weight: 700; margin-top: 1.5rem;">▶ 비밀번호 변경 작업</p>
+
+        <p class="body-text">메뉴 경로: <strong>시스템(System) → 사용자 관리(User Management) → admin → 비밀번호 변경</strong></p>
+
+        <div class="output-label">📋 강력한 비밀번호 권장 요건</div>
+        <div class="output-box">
+✅ 길이      : <span class="ok">12자 이상</span>
+✅ 문자 종류  : <span class="ok">대문자 + 소문자 + 숫자 + 특수문자</span> 모두 포함
+✅ 회피      : 사전 단어, 생일, 전화번호, "password", "admin", "123456"
+✅ 예시 형식  : ZetaR0bot!2026
+                <span class="comment"># 실제로는 본인만 아는 다른 비번 사용</span>
+
+❌ 나쁜 예    : 12345678, password123, admin2026, qwerty</div>
+
+        <div class="interpret-box">
+          <div class="interpret-title">💡 비밀번호 강도 측정</div>
+          <ul class="interpret-list">
+            <li><strong>12자 + 4가지 문자 종류</strong> = 해킹 난이도 매우 높음</li>
+            <li><strong>brute force 시간</strong>: 8자 = 몇 시간, 12자 = 수만 년</li>
+            <li><strong>사전 공격</strong>: 일반 단어는 즉시 깨짐 → 무작위 조합 필수</li>
+            <li><strong>비밀번호 관리</strong>: Bitwarden, 1Password 같은 도구 사용 권장</li>
+          </ul>
+        </div>
+
+        <p class="body-text" style="font-weight: 700; margin-top: 1.5rem;">▶ 저장 → 자동 로그아웃 → 새 비번 재로그인 → IP 변경 진행 (단계 5)</p>
+
+        <div class="callout callout-tip">
+          <span class="callout-icon">📝</span>
+          <div class="callout-content"><strong>메모하세요 (안전한 곳에):</strong> 새 비밀번호 ____________________<br><br>
+          <strong>분실 시 복구:</strong> 카메라의 리셋 버튼(보통 작은 구멍)을 5~10초 길게 누르면 공장 초기화. 단계 1부터 다시 시작.</div>
+        </div>
+
+        <div class="callout callout-danger">
+          <span class="callout-icon">🔒</span>
+          <div class="callout-content"><strong>완료 후 확인:</strong>
+          <ul style="margin: 0.5rem 0 0 1.2rem;">
+            <li>새 비밀번호로 로그인 가능한지 확인</li>
+            <li>IP가 192.168.50.123으로 변경됐는지 (Phase 2에서 검증 예정)</li>
+            <li>두 변경 사항이 모두 저장되었는지</li>
+          </ul></div>
+        </div>
+
+        <div class="next-step" style="--next-bg-1: #ECFDF5; --next-bg-2: #D1FAE5; --next-border: #059669; --next-color: #064E3B;">
+          <div class="next-step-text">🎉 <strong>Phase 1 (선행작업) 완료!</strong> &nbsp;→ Phase 2 (본작업) 시작</div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ====================================================== -->
+<!-- ============== Phase 2 시작 ============== -->
+<!-- ====================================================== -->
+<section style="background: var(--color-card);">
+  <div class="container">
+    <div class="phase-header" style="--phase-color: linear-gradient(135deg, #059669, #047857);">
+      <div class="phase-header-title">🟢 Phase 2 — 본작업 (단계 7~10)</div>
+      <div class="phase-header-subtitle">선행작업으로 카메라가 준비됐으니, 이제 라우터로 옮겨 한 번에 성공시킵니다</div>
+    </div>
+
+<!-- ====================================================== -->
+<!-- ============== 단계 7 — 라우터로 이동 ============== -->
+<!-- ====================================================== -->
+    <div class="step-card">
+      <div class="step-head" style="--accent: linear-gradient(135deg, #059669, #047857);">
+        <div class="step-badge">7</div>
+        <div class="step-emoji">🔌</div>
+        <div class="step-name">
+          <div class="step-name-title">카메라를 라우터 LAN으로 이동</div>
+          <div class="step-name-subtitle">물리적 케이블 이동 + NUC 원복</div>
+        </div>
+      </div>
+
+      <div class="step-body">
+
+        <div class="why-box">
+          <div class="why-title">🤔 이제 라우터로 옮겨도 안전한 이유</div>
+          <div class="why-content">
+            Phase 1에서 카메라의 IP를 라우터 대역(192.168.50.123)으로 미리 변경했기 때문에,
+            이제 라우터에 연결되는 즉시 정상적으로 통신 가능합니다.
+            카메라가 "다른 동네 거주자"가 아니라 이제 "같은 동네 입주자"가 된 상태예요.
+          </div>
+        </div>
+
+        <p class="body-text" style="font-weight: 700;">▶ 물리 작업 1: 카메라 케이블 이동</p>
+
+        <div class="callout callout-info">
+          <span class="callout-icon">🔌</span>
+          <div class="callout-content"><strong>케이블 이동:</strong>
+          <ol style="margin: 0.5rem 0 0 1.2rem;">
+            <li>카메라 RJ45에서 NUC eno1으로 가던 랜선을 NUC에서 분리</li>
+            <li>같은 랜선을 라우터의 <strong>LAN 포트</strong>에 꽂기</li>
+            <li>WAN 포트(보통 색이 다름)와 혼동 주의!</li>
+          </ol></div>
+        </div>
+
+        <div class="callout callout-warning">
+          <span class="callout-icon">⚠️</span>
+          <div class="callout-content"><strong>WAN vs LAN 구분:</strong> 일반적인 라우터:<br>
+          • WAN 포트: 1개, 보통 파란색 또는 노란색, 인터넷 회선이 들어옴<br>
+          • LAN 포트: 4개, 모두 같은 색, 가정 내부 기기 연결용<br>
+          → 카메라는 반드시 <strong>LAN 포트</strong>에 꽂기</div>
+        </div>
+
+        <p class="body-text" style="font-weight: 700; margin-top: 1.5rem;">▶ 명령어 작업: NUC IP를 DHCP 자동으로 원복</p>
+
+        <p class="body-text">Phase 1에서 NUC eno1을 192.168.1.50으로 임시 설정했어요. 이제 본래 DHCP 자동 모드로 원복합니다.</p>
+
+        <div class="cmd-box">
+          <button class="copy-btn" data-cmd='sudo nmcli connection modify "유선 연결 1" ipv4.method auto ipv4.addresses "" ipv4.gateway "" ipv4.dns ""'>📋 복사</button>
+          <div class="cmd-box-label">⌨️ NUC eno1 DHCP로 원복</div>
+          <code><span class="prompt">$</span>sudo nmcli connection modify <span class="str">"유선 연결 1"</span> \
+    <span class="opt">ipv4.method</span> auto \
+    <span class="opt">ipv4.addresses</span> <span class="str">""</span> \
+    <span class="opt">ipv4.gateway</span> <span class="str">""</span> \
+    <span class="opt">ipv4.dns</span> <span class="str">""</span></code>
+        </div>
+
+        <div class="cmd-breakdown">
+          <div class="cmd-breakdown-title">📖 변경 사항</div>
+          <table class="cmd-table">
+            <tr><td>ipv4.method auto</td><td>"manual" → "auto" 변경. DHCP로 자동 IP 받기.</td></tr>
+            <tr><td>ipv4.addresses ""</td><td>수동 IP 삭제 (빈 값으로).</td></tr>
+            <tr><td>ipv4.gateway / dns ""</td><td>마찬가지로 빈 값으로 원복.</td></tr>
+          </table>
+        </div>
+
+        <div class="cmd-box">
+          <button class="copy-btn" data-cmd='sudo nmcli connection down "유선 연결 1"'>📋 복사</button>
+          <div class="cmd-box-label">⌨️ eno1 비활성화 (사용 안 함)</div>
+          <code><span class="prompt">$</span>sudo nmcli connection down <span class="str">"유선 연결 1"</span></code>
+        </div>
+
+        <div class="interpret-box">
+          <div class="interpret-title">💡 NUC eno1 원복이 필요한 이유</div>
+          <ul class="interpret-list">
+            <li>eno1을 192.168.1.50으로 유지하면 다음 사용 시 충돌 가능</li>
+            <li>DHCP 자동으로 두면 어떤 환경에 옮겨도 호환됨</li>
+            <li>eno1 자체는 케이블이 없으니 "사용할 수 없음" 상태가 됨 (정상)</li>
+          </ul>
+        </div>
+
+        <div class="next-step" style="--next-bg-1: #ECFDF5; --next-bg-2: #D1FAE5; --next-border: #059669; --next-color: #064E3B;">
+          <div class="next-step-text">✅ 카메라 라우터 이동 + NUC eno1 원복? &nbsp;<strong>→ 단계 8</strong></div>
+        </div>
+
+      </div>
+    </div>
+
+<!-- ====================================================== -->
+<!-- ============== 단계 8 — NUC 라우터 망 확인 ============== -->
+<!-- ====================================================== -->
+    <div class="step-card">
+      <div class="step-head" style="--accent: linear-gradient(135deg, #059669, #047857);">
+        <div class="step-badge">8</div>
+        <div class="step-emoji">📡</div>
+        <div class="step-name">
+          <div class="step-name-title">NUC의 라우터 망 연결 확인</div>
+          <div class="step-name-subtitle">NUC이 어떤 인터페이스로 라우터에 연결됐는지 확인</div>
+        </div>
+      </div>
+
+      <div class="step-body">
+
+        <div class="why-box">
+          <div class="why-title">🤔 NUC의 라우터 망 상태를 왜 확인?</div>
+          <div class="why-content">
+            카메라가 라우터 망(192.168.50.x)에 있으니, NUC도 같은 라우터 망에 있어야 통신 가능합니다.
+            NUC이 WiFi로 라우터에 연결되어 있다면 자동으로 같은 망에 있을 거예요.
+            이 단계에서는 그 상태를 확인하고, 단계 9의 스캔에 사용할 인터페이스 이름을 파악합니다.
+          </div>
+        </div>
+
+        <p class="body-text" style="font-weight: 700;">▶ 명령어: NUC 인터페이스 상태 확인</p>
+
+        <div class="cmd-box">
+          <button class="copy-btn" data-cmd="nmcli device status">📋 복사</button>
+          <div class="cmd-box-label">⌨️ 터미널에 입력</div>
+          <code><span class="prompt">$</span>nmcli device status</code>
+        </div>
+
+        <div class="output-label">🖥️ 예상 출력 (빅맥님 환경)</div>
+        <div class="output-box">
+DEVICE             TYPE      STATE              CONNECTION
+wlp0s20f3          wifi      연결됨             NTH215
+<span class="ok">wlx002e2d40106e</span>    wifi      <span class="ok">연결됨</span>             <span class="key">zeta_amr_rnd 3</span>
+lo                 loopback  연결됨 (외부)      lo
+eno1               ethernet  사용할 수 없음     --</div>
+
+        <div class="interpret-box">
+          <div class="interpret-title">💡 확인 사항</div>
+          <ul class="interpret-list">
+            <li><strong>라우터 SSID (예: zeta_amr_rnd 3)</strong>에 연결된 인터페이스 찾기</li>
+            <li>위 예시에서는 <strong>wlx002e2d40106e</strong>가 라우터에 WiFi로 연결됨</li>
+            <li>eno1은 케이블 없어 "사용할 수 없음" (Phase 1에서 카메라 옮긴 후 정상 상태)</li>
+            <li>이 인터페이스 이름을 단계 9에서 사용</li>
+          </ul>
+        </div>
+
+        <p class="body-text" style="font-weight: 700; margin-top: 1.5rem;">▶ NUC IP 대역 확인</p>
+
+        <div class="cmd-box">
+          <button class="copy-btn" data-cmd="ip addr show wlx002e2d40106e | grep 'inet '">📋 복사</button>
+          <div class="cmd-box-label">⌨️ 라우터 망 IP 대역 확인</div>
+          <code><span class="prompt">$</span>ip addr show wlx002e2d40106e <span class="opt">|</span> grep <span class="str">'inet '</span></code>
+        </div>
+
+        <div class="output-label">🖥️ 예상 출력</div>
+        <div class="output-box">
+    <span class="ok">inet 192.168.50.237/24</span> brd 192.168.50.255 scope global dynamic noprefixroute wlx002e2d40106e</div>
+
+        <div class="interpret-box">
+          <div class="interpret-title">💡 결과 해석</div>
+          <ul class="interpret-list">
+            <li><strong>NUC IP: 192.168.50.237</strong> → 라우터 대역(50)에 정상 진입</li>
+            <li>이제 카메라(192.168.50.123)와 NUC이 <strong>같은 대역</strong>에 있음</li>
+            <li>"dynamic" = DHCP로 받은 IP (자동 갱신될 수 있음)</li>
+            <li>두 기기가 직접 통신 가능한 상태 → 단계 9에서 검증</li>
+          </ul>
+        </div>
+
+        <div class="callout callout-tip">
+          <span class="callout-icon">📝</span>
+          <div class="callout-content"><strong>메모:</strong><br>
+          ▸ NUC 라우터 망 IP: ____________________ (예: 192.168.50.237)<br>
+          ▸ 사용할 인터페이스: ____________________ (예: wlx002e2d40106e)</div>
+        </div>
+
+        <div class="next-step" style="--next-bg-1: #ECFDF5; --next-bg-2: #D1FAE5; --next-border: #059669; --next-color: #064E3B;">
+          <div class="next-step-text">✅ NUC이 라우터 망에 있나요? &nbsp;<strong>→ 단계 9에서 카메라 발견</strong></div>
+        </div>
+
+      </div>
+    </div>
+
+<!-- ====================================================== -->
+<!-- ============== 단계 9 — arp-scan으로 발견 ============== -->
+<!-- ====================================================== -->
+    <div class="step-card">
+      <div class="step-head" style="--accent: linear-gradient(135deg, #059669, #047857);">
+        <div class="step-badge">9</div>
+        <div class="step-emoji">✅</div>
+        <div class="step-name">
+          <div class="step-name-title">arp-scan으로 카메라 한 번에 발견</div>
+          <div class="step-name-subtitle">Phase 1 효과 검증 — 시행착오 없는 첫 성공</div>
+        </div>
+      </div>
+
+      <div class="step-body">
+
+        <div class="why-box">
+          <div class="why-title">🤔 V3의 진가가 드러나는 단계</div>
+          <div class="why-content">
+            V1, V2에서는 이 단계에서 카메라가 안 보이는 함정에 빠졌습니다.
+            그러나 V3는 Phase 1에서 카메라 IP를 미리 192.168.50.123으로 변경했기 때문에,
+            <strong>이번 스캔에서 한 번에 발견됩니다</strong>. 시행착오 없이 깔끔하게 성공해요.
+          </div>
+        </div>
+
+        <p class="body-text" style="font-weight: 700;">▶ arp-scan 도구 설치 확인 (안 깔려 있으면 설치)</p>
+
+        <div class="cmd-box">
+          <button class="copy-btn" data-cmd="sudo apt install arp-scan -y">📋 복사</button>
+          <div class="cmd-box-label">⌨️ arp-scan 설치</div>
+          <code><span class="prompt">$</span>sudo apt install arp-scan <span class="opt">-y</span></code>
+        </div>
+
+        <p class="body-text" style="font-weight: 700; margin-top: 1.5rem;">▶ 라우터 망 스캔</p>
+
+        <div class="cmd-box">
+          <button class="copy-btn" data-cmd="sudo arp-scan --interface=wlx002e2d40106e --localnet">📋 복사</button>
+          <div class="cmd-box-label">⌨️ 같은 대역 모든 기기 스캔</div>
+          <code><span class="prompt">$</span>sudo arp-scan <span class="opt">--interface=</span>wlx002e2d40106e <span class="opt">--localnet</span></code>
+        </div>
+
+        <div class="cmd-breakdown">
+          <div class="cmd-breakdown-title">📖 명령어 분해</div>
+          <table class="cmd-table">
+            <tr><td>sudo</td><td>관리자 권한 (네트워크 카드 직접 접근).</td></tr>
+            <tr><td>arp-scan</td><td>같은 대역 전체에 ARP 요청을 보내 응답한 모든 기기 목록 수집.</td></tr>
+            <tr><td>--interface=...</td><td>스캔에 사용할 NUC 인터페이스 (단계 8에서 확인).</td></tr>
+            <tr><td>--localnet</td><td>"내가 속한 대역" 전체 스캔. NUC IP에서 자동 추출 (예: 192.168.50.0/24).</td></tr>
+          </table>
+        </div>
+
+        <div class="output-label">🖥️ 예상 출력 (V3에서는 한 번에 성공!)</div>
+        <div class="output-box">
+Interface: wlx002e2d40106e, type: EN10MB, MAC: 00:2e:2d:40:10:6e, IPv4: 192.168.50.237
+Starting arp-scan 1.10.0 with 256 hosts
+<span class="ip">192.168.50.1</span>     04:42:1a:68:ec:60   <span class="comment">(라우터)</span>
+<span class="ip">192.168.50.123</span>   <span class="key">f0:00:00:99:e0:85</span>   <span class="ok">(카메라! 우리가 설정한 IP) ⭐</span>
+<span class="ip">192.168.50.237</span>   00:2e:2d:40:10:6e   <span class="comment">(NUC 자기 자신)</span>
+
+3 packets received by filter, 0 packets dropped by kernel
+Ending arp-scan 1.10.0: 256 hosts scanned. <span class="ok">3 responded</span></div>
+
+        <div class="interpret-box">
+          <div class="interpret-title">💡 V3의 성공 확인</div>
+          <ul class="interpret-list">
+            <li><strong>192.168.50.123</strong>이 보이면 → Phase 1 성공! ✅</li>
+            <li>이 IP는 우리가 Phase 1에서 직접 지정한 고정 IP</li>
+            <li>카메라 MAC(f0:00:00:99:e0:85)이 일치하는지 확인</li>
+            <li>분기 처리 없이 깔끔하게 한 번에 발견</li>
+          </ul>
+        </div>
+
+        <p class="body-text" style="font-weight: 700; margin-top: 1.5rem;">▶ 추가 검증: ping으로 통신 확인</p>
+
+        <div class="cmd-box">
+          <button class="copy-btn" data-cmd="ping -c 3 192.168.50.123">📋 복사</button>
+          <div class="cmd-box-label">⌨️ 카메라 ping 검증</div>
+          <code><span class="prompt">$</span>ping <span class="opt">-c</span> 3 192.168.50.123</code>
+        </div>
+
+        <div class="output-label">🖥️ 예상 출력</div>
+        <div class="output-box">
+PING 192.168.50.123 (192.168.50.123) 56(84) bytes of data.
+64 bytes from <span class="ip">192.168.50.123</span>: icmp_seq=1 ttl=64 <span class="ok">time=2.5 ms</span>
+64 bytes from <span class="ip">192.168.50.123</span>: icmp_seq=2 ttl=64 <span class="ok">time=2.3 ms</span>
+64 bytes from <span class="ip">192.168.50.123</span>: icmp_seq=3 ttl=64 <span class="ok">time=2.4 ms</span>
+
+3 packets transmitted, <span class="ok">3 received, 0% packet loss</span></div>
+
+        <div class="callout callout-tip">
+          <span class="callout-icon">⚡</span>
+          <div class="callout-content"><strong>WiFi vs 직결 응답 시간 차이:</strong> 직결 환경(Phase 1)에서는 ping이 ~0.5ms였는데, WiFi 라우터 환경에서는 ~2.5ms로 약간 느림. 정상적인 차이입니다. 영상 시청에는 문제 없음.</div>
+        </div>
+
+        <div class="next-step" style="--next-bg-1: #ECFDF5; --next-bg-2: #D1FAE5; --next-border: #059669; --next-color: #064E3B;">
+          <div class="next-step-text">✅ 카메라 발견 + ping 성공? &nbsp;<strong>→ 단계 10에서 영상 시청 🎉</strong></div>
+        </div>
+
+      </div>
+    </div>
+
+<!-- ====================================================== -->
+<!-- ============== 단계 10 — 시청 ============== -->
+<!-- ====================================================== -->
+    <div class="step-card">
+      <div class="step-head" style="--accent: linear-gradient(135deg, #059669, #047857);">
+        <div class="step-badge">10</div>
+        <div class="step-emoji">👥</div>
+        <div class="step-name">
+          <div class="step-name-title">RTSP 검증 + ffplay 시청 (멀티 PC)</div>
+          <div class="step-name-subtitle">🎉 라우터 연결의 진정한 장점 발현</div>
+        </div>
+      </div>
+
+      <div class="step-body">
+
+        <div class="why-box">
+          <div class="why-title">🤔 라우터 연결의 진짜 장점</div>
+          <div class="why-content">
+            지금부터 만들 RTSP URL은 <strong>같은 라우터에 연결된 어떤 PC에서든 동일하게 작동</strong>합니다.
+            NUC, 학생 노트북, Mac, Windows PC 모두 같은 URL로 카메라 영상에 직접 접근 가능.
+            이게 NUC 직결(실습자료 1)과의 결정적 차이입니다.
+          </div>
+        </div>
+
+        <p class="body-text" style="font-weight: 700;">▶ NUC에서 영상 시청 (먼저 검증)</p>
+
+        <div class="cmd-box">
+          <button class="copy-btn" data-cmd="ffplay -rtsp_transport tcp -fflags nobuffer -flags low_delay -framedrop -an rtsp://admin:새비번@192.168.50.123:554/Streaming/Channels/101">📋 복사</button>
+          <div class="cmd-box-label">⌨️ NUC에서 영상 띄우기 (새 IP + 새 비번 사용)</div>
+          <code><span class="prompt">$</span>ffplay <span class="opt">-rtsp_transport</span> tcp \
+    <span class="opt">-fflags</span> nobuffer <span class="opt">-flags</span> low_delay <span class="opt">-framedrop</span> <span class="opt">-an</span> \
+    <span class="str">rtsp://admin:새비번@192.168.50.123:554/Streaming/Channels/101</span></code>
+        </div>
+
+        <div class="cmd-breakdown">
+          <div class="cmd-breakdown-title">📖 RTSP URL 분해 (Phase 1에서 변경한 값 반영)</div>
+          <table class="cmd-table">
+            <tr><td>rtsp://</td><td>RTSP 프로토콜.</td></tr>
+            <tr><td>admin:새비번</td><td>사용자명과 <strong>단계 6에서 변경한 새 비번</strong>.</td></tr>
+            <tr><td>192.168.50.123</td><td><strong>단계 5에서 변경한 새 IP</strong> (라우터 대역).</td></tr>
+            <tr><td>:554</td><td>RTSP 표준 포트.</td></tr>
+            <tr><td>/Streaming/Channels/101</td><td>메인 스트림 (1080p). 102는 서브 (480p).</td></tr>
+          </table>
+        </div>
+
+        <p class="body-text" style="font-weight: 700; margin-top: 1.5rem;">▶ ⭐ 다른 PC에서도 같은 명령어 (라우터 연결의 진가)</p>
+
+        <p class="body-text">같은 WiFi(zeta_amr_rnd)에 연결된 어떤 PC에서든:</p>
+
+        <div class="cmd-box">
+          <button class="copy-btn" data-cmd="ffplay -rtsp_transport tcp rtsp://admin:새비번@192.168.50.123:554/Streaming/Channels/101">📋 복사</button>
+          <div class="cmd-box-label">⌨️ 학생 노트북 / 다른 PC에서 (Linux/Mac/Windows)</div>
+          <code><span class="prompt">$</span>ffplay <span class="opt">-rtsp_transport</span> tcp <span class="str">rtsp://admin:새비번@192.168.50.123:554/Streaming/Channels/101</span></code>
+        </div>
+
+        <div class="callout callout-info">
+          <span class="callout-icon">📺</span>
+          <div class="callout-content"><strong>V3의 최종 가치:</strong> 5명의 학생이 각자 노트북에서 동시에 위 명령어를 실행하면 모두 영상이 보입니다. NUC을 거치지 않고 카메라에서 직접 영상을 받아요. 4월 교육에서 OpenCV 영상 처리 실습이 가능한 이유입니다.</div>
+        </div>
+
+        <div class="interpret-box">
+          <div class="interpret-title">💡 이제 가능한 일들</div>
+          <ul class="interpret-list">
+            <li><strong>OpenCV에서 사용</strong>: <code>cv2.VideoCapture('rtsp://...')</code></li>
+            <li><strong>VLC 시청</strong>: 미디어 → 네트워크 스트림 열기</li>
+            <li><strong>24/7 녹화</strong>: <code>ffmpeg -i URL -c copy output.mp4</code></li>
+            <li><strong>통합 모니터링</strong>: lekiwi_monitor_web.py에 입력으로 연결</li>
+            <li><strong>학생 N명 동시 시청</strong> (카메라 동시 연결 한계까지)</li>
+          </ul>
+        </div>
+
+        <div class="analogy-box">
+          <div class="analogy-icon">🎉</div>
+          <div>
+            <div class="analogy-title">V3 완성 — 한 번에 성공한 통합 시스템</div>
+            <p class="analogy-text">"<strong>방송국 채널 개설 + 보안 강화 완료</strong>"입니다. 카메라가 라우터 대역의 안정적인 고정 IP로 자리 잡았고, 강력한 비밀번호로 보호되며, 라우터 망의 모든 기기가 안전하게 시청할 수 있어요. 시행착오 없이 깔끔하게 완성된 환경입니다.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============== 체크리스트 ============== -->
+<section>
+  <div class="container">
+    <h2 class="section-title">실습 체크리스트 — V3 흐름</h2>
+    <p class="section-lead">두 Phase로 나누어 단계별 진행 체크</p>
+
+    <div class="checklist">
+      <div class="checklist-title">🟣 Phase 1 — 선행작업 (NUC 직결 상태)</div>
+      <div class="checklist-item"><div class="checklist-box"></div><div>1. 카메라 ↔ NUC eno1 직결 + <code>nmcli device status</code> 인터페이스 확인</div></div>
+      <div class="checklist-item"><div class="checklist-box"></div><div>2. <code>sudo tcpdump</code>으로 카메라 현재 IP 발견 (예: 192.168.1.123)</div></div>
+      <div class="checklist-item"><div class="checklist-box"></div><div>3. NUC을 같은 대역으로 임시 설정 (192.168.1.50/24) + ping 확인</div></div>
+      <div class="checklist-item"><div class="checklist-box"></div><div>4. 브라우저로 카메라 웹 UI 접속 (http://192.168.1.123)</div></div>
+      <div class="checklist-item"><div class="checklist-box"></div><div>5. ⭐ 카메라 IP를 라우터 대역 고정 IP로 변경 (192.168.50.123)</div></div>
+      <div class="checklist-item"><div class="checklist-box"></div><div>6. 비밀번호 강력하게 변경 (12자 이상 복합)</div></div>
+    </div>
+
+    <div class="checklist" style="margin-top: 1rem;">
+      <div class="checklist-title">🟢 Phase 2 — 본작업 (라우터 통합)</div>
+      <div class="checklist-item"><div class="checklist-box"></div><div>7. 카메라 케이블을 NUC → 라우터 LAN으로 이동 + NUC eno1 DHCP 원복</div></div>
+      <div class="checklist-item"><div class="checklist-box"></div><div>8. <code>nmcli device status</code> + <code>ip addr show</code>로 NUC 라우터 망 IP 확인</div></div>
+      <div class="checklist-item"><div class="checklist-box"></div><div>9. <code>sudo arp-scan --localnet</code>으로 카메라 발견 (한 번에 성공) + ping</div></div>
+      <div class="checklist-item"><div class="checklist-box"></div><div>10. <code>ffplay</code>로 영상 시청 + 다른 PC에서도 시청 확인 🎉</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== 트러블슈팅 ============== -->
+<section style="background: var(--color-card);">
+  <div class="container">
+    <h2 class="section-title">자주 막히는 부분 — V3 트러블슈팅</h2>
+
+    <table class="data-table">
+      <thead><tr><th>증상</th><th>가능한 원인</th><th>해결</th></tr></thead>
+      <tbody>
+        <tr><td>tcpdump에 IP 안 나옴 (단계 2)</td><td>카메라 부팅 완료 또는 케이블 문제</td><td>카메라 전원 OFF → ON 후 재시도</td></tr>
+        <tr><td>웹 UI 접속 안 됨 (단계 4)</td><td>NUC IP 미설정 또는 카메라 IP 오류</td><td>단계 3의 ping 다시 확인</td></tr>
+        <tr><td>카메라 웹 UI에서 "저장" 버튼 안 보임 (단계 5)</td><td>관리자 권한 필요</td><td>admin 계정으로 재로그인</td></tr>
+        <tr><td>단계 5 저장 후 다시 접속 안 됨</td><td>정상 — 카메라가 새 IP로 변경되어 옛 IP 무효</td><td>본 단계 마무리. Phase 2 진행</td></tr>
+        <tr><td>단계 9 arp-scan에 라우터만 보임</td><td>카메라 부팅 미완료</td><td>1~2분 대기 후 재시도</td></tr>
+        <tr><td>단계 9에서 다른 IP로 보임</td><td>단계 5의 고정 IP 설정이 DHCP로 됨</td><td>단계 5에서 "정적/Static" 모드인지 확인</td></tr>
+        <tr><td>ffplay 401 Unauthorized (단계 10)</td><td>새 비번이 아닌 옛 비번 사용</td><td>URL에 단계 6의 새 비번 입력</td></tr>
+        <tr><td>다른 PC에서 영상 안 나옴</td><td>그 PC가 다른 라우터에 연결</td><td>같은 WiFi/라우터 확인</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============== V1, V2, V3 비교 ============== -->
+<section>
+  <div class="container">
+    <h2 class="section-title">🆚 V1, V2, V3 — 라우터 연결 접근법의 진화</h2>
+
+    <table class="data-table">
+      <thead><tr><th>버전</th><th>접근법</th><th>장단점</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>V1</strong></td>
+          <td>라우터에 바로 꽂고 → 안 보이면 우회</td>
+          <td>❌ 분기 처리 복잡, 시행착오 발생</td>
+        </tr>
+        <tr>
+          <td><strong>V2</strong></td>
+          <td>V1과 같은 흐름 + 자세한 풀이</td>
+          <td>⚠️ 학습 자료로는 좋지만 여전히 비효율</td>
+        </tr>
+        <tr>
+          <td><strong>V3 ⭐</strong></td>
+          <td><strong>선행작업으로 IP 미리 변경 → 라우터로</strong></td>
+          <td>✅ 한 번에 성공, 분기 없음, 깔끔</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-tip" style="margin-top: 1.5rem;">
+      <span class="callout-icon">🎯</span>
+      <div class="callout-content"><strong>V3의 핵심 통찰:</strong> "이사 가기 전에 새 주소를 정해두기" — 카메라를 라우터로 옮기기 <strong>전에</strong> 라우터 대역의 고정 IP를 미리 설정. 시간 순서를 바꾸는 것만으로 분기 처리가 사라지고 100% 첫 시도 성공이 가능해집니다.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== 푸터 ============== -->
+<footer style="background: linear-gradient(135deg, #5B21B6, #047857); color: white; padding: 2.5rem 0; text-align: center;">
+  <div class="container">
+    <div style="font-weight: 700; font-size: 1.2rem; margin-bottom: 0.4rem;">📡 실습자료 2 V3 — IP 카메라 라우터 연결 (선행작업 포함)</div>
+    <div style="font-size: 0.95rem; opacity: 0.85;">10단계 (Phase 1 선행 6 + Phase 2 본작업 4) · 한 번에 성공하는 흐름</div>
+    <div style="font-size: 0.82rem; opacity: 0.6; margin-top: 0.85rem;">
+      빅맥 교육 자료 시리즈 · Physical AI 입문 과정 · 2026-06-15
+    </div>
+  </div>
+</footer>
+
+<!-- ============== 복사 버튼 스크립트 ============== -->
+<script>
+  document.querySelectorAll('.copy-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var cmd = btn.getAttribute('data-cmd');
+      var done = function () {
+        var original = btn.innerHTML;
+        btn.innerHTML = '✅ 복사됨';
+        btn.classList.add('copied');
+        setTimeout(function () {
+          btn.innerHTML = original;
+          btn.classList.remove('copied');
+        }, 1500);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(cmd).then(done).catch(function () { fallbackCopy(cmd, done); });
+      } else {
+        fallbackCopy(cmd, done);
+      }
+    });
+  });
+  function fallbackCopy(text, done) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    done();
+  }
+</script>
+
+</body>
+</html>

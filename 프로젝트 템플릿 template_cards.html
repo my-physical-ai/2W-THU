@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>공장 라인 카드 — NUC 통합 모니터링</title>
+<!--
+  ============================================================
+  템플릿 2 · 카드형 (FACTORY CARD GRID · 3D) — 샘플
+  ------------------------------------------------------------
+  ★ 공장 "라인 카드 / 품질검증 카드"를 3D 느낌으로 보여주는 샘플입니다 ★
+  - 실제 영상 = 백엔드 /api/cameras 의 카메라(웹캠2 + IP1).
+  - 'demo_*' 카드 = 공장 카메라가 많다는 걸 보여주는 데모(영상 없음).
+  - 카드를 그룹(생산 라인 / 품질 검증 / 물류)으로 묶었습니다.
+  - 마우스를 올리면 카드가 살짝 기울며(3D tilt) 떠오릅니다.
+  - 백엔드는 건드리지 말고, 이 파일 디자인만 바꾸세요.  [TEAM] 주석 참고.
+  ============================================================
+-->
+<style>
+  /* [TEAM] 색 테마 */
+  :root{
+    --bg1:#0b1224; --bg2:#131c33; --card:#161f38; --card2:#1b2747; --line:#2a3a5e;
+    --text:#eaf0ff; --muted:#9bb0d8; --accent:#38bdf8; --accent2:#818cf8;
+    --live:#34d399; --warn:#fbbf24; --off:#64748b; --danger:#fb7185;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,'Noto Sans KR',sans-serif;color:var(--text);min-height:100vh;
+    background:radial-gradient(1100px 500px at 15% -5%, #1b2a52 0%, transparent 55%),
+               radial-gradient(900px 500px at 100% 0%, #241a4d 0%, transparent 50%),
+               linear-gradient(180deg,var(--bg1),var(--bg2))}
+
+  .topbar{display:flex;align-items:center;gap:14px;padding:14px 20px;
+    background:rgba(12,18,36,.7);border-bottom:1px solid var(--line);backdrop-filter:blur(8px);position:sticky;top:0;z-index:20}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800}
+  .brand .logo{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#6366f1,#38bdf8);
+    display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 6px 18px rgba(56,189,248,.35)}
+  .brand small{display:block;font-weight:400;font-size:11px;color:var(--muted)}
+  .summary{display:flex;gap:10px}
+  .chip{font-size:12px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.04);
+    display:flex;align-items:center;gap:6px}
+  .chip b{font-family:'JetBrains Mono',monospace}
+  .chip .d{width:7px;height:7px;border-radius:50%}
+
+  /* [TEAM] 상단 오른쪽 필터 메뉴 (전체/생산/품질/물류/출고) */
+  .filters{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+  .filter-btn{font-size:13px;font-weight:600;padding:7px 14px;border-radius:10px;cursor:pointer;
+    border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--muted);transition:all .15s;
+    display:flex;align-items:center;gap:6px}
+  .filter-btn:hover{color:var(--text);border-color:var(--accent)}
+  .filter-btn.active{background:linear-gradient(135deg,#2563eb,#38bdf8);color:#fff;border-color:transparent;
+    box-shadow:0 6px 16px -4px rgba(56,189,248,.5)}
+  .filter-btn .cnt{font-size:11px;opacity:.85;font-family:'JetBrains Mono',monospace}
+  .home{color:var(--muted);text-decoration:none;font-size:13px;border:1px solid var(--line);padding:6px 12px;border-radius:8px}
+
+  .wrap{max-width:1240px;margin:0 auto;padding:22px}
+
+  /* 그룹 헤더 */
+  .group{margin-bottom:34px}
+  .group-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .group-head .ic{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px}
+  .g-line .ic{background:linear-gradient(135deg,#2563eb,#38bdf8)}
+  .g-qc   .ic{background:linear-gradient(135deg,#7c3aed,#a78bfa)}
+  .g-log  .ic{background:linear-gradient(135deg,#059669,#34d399)}
+  .g-ship .ic{background:linear-gradient(135deg,#d97706,#fbbf24)}
+  /* 그룹 전환 페이드인 */
+  .group{animation:fadeUp .35s ease both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  .group-head h2{font-size:17px;font-weight:800}
+  .group-head .sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .group-head .gcount{margin-left:auto;font-size:12px;color:var(--muted)}
+
+  /* [TEAM] 3D 카드 격자 — 원근(perspective)이 핵심 */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;perspective:1200px}
+
+  .card{position:relative;border-radius:18px;overflow:hidden;cursor:pointer;
+    background:linear-gradient(160deg,var(--card2),var(--card));
+    border:1px solid var(--line);
+    box-shadow:0 14px 30px -12px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.05);
+    transform-style:preserve-3d;transition:transform .18s ease, box-shadow .18s ease;
+    will-change:transform}
+  .card:hover{transform:translateY(-8px) rotateX(6deg) rotateY(-6deg) scale(1.015);
+    box-shadow:0 30px 50px -16px rgba(0,0,0,.8), 0 0 0 1px var(--accent), inset 0 1px 0 rgba(255,255,255,.08)}
+  .card .sheen{position:absolute;inset:0;background:linear-gradient(115deg,rgba(255,255,255,.10),transparent 40%);
+    opacity:0;transition:opacity .18s;pointer-events:none}
+  .card:hover .sheen{opacity:1}
+
+  .card .screen{position:relative;aspect-ratio:16/10;background:#000;overflow:hidden}
+  .card .screen img{width:100%;height:100%;object-fit:cover;display:block}
+  .card .demo{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;
+    color:#46587d;font-size:13px;
+    background:repeating-linear-gradient(45deg,#0a1224,#0a1224 10px,#0d1730 10px,#0d1730 20px)}
+  .card .demo .big{font-size:34px}
+  .card .scan{position:absolute;left:0;right:0;height:30%;top:-30%;
+    background:linear-gradient(180deg,rgba(56,189,248,.18),transparent);animation:scan 3.5s linear infinite}
+  @keyframes scan{to{top:130%}}
+  .card .tag{position:absolute;left:12px;top:12px;display:flex;gap:6px;align-items:center;
+    background:rgba(0,0,0,.55);padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;backdrop-filter:blur(4px)}
+  .card .tag .d{width:7px;height:7px;border-radius:50%}
+  .d-live{background:var(--live);box-shadow:0 0 6px var(--live)}
+  .d-warn{background:var(--warn);box-shadow:0 0 6px var(--warn)}
+  .d-off{background:var(--off)}
+  .card .ch{position:absolute;right:12px;top:12px;font-family:'JetBrains Mono',monospace;font-size:11px;
+    background:rgba(0,0,0,.55);padding:4px 9px;border-radius:7px;color:var(--accent);backdrop-filter:blur(4px)}
+
+  .card .meta{padding:13px 15px}
+  .card .meta .nm{font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .card .meta .sub{font-size:12px;color:var(--muted);margin-top:3px;display:flex;gap:10px}
+  .kpis{display:flex;gap:8px;margin-top:11px}
+  .kpibox{flex:1;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:10px;padding:8px 10px;text-align:center}
+  .kpibox .v{font-size:16px;font-weight:800;font-family:'JetBrains Mono',monospace}
+  .kpibox .l{font-size:10px;color:var(--muted);margin-top:2px}
+  .kpibox.ok .v{color:var(--live)} .kpibox.warn .v{color:var(--warn)}
+  .card .foot{display:flex;gap:8px;padding:0 15px 14px}
+  .card .foot button{flex:1;border:none;border-radius:9px;padding:9px;font-size:12.5px;font-weight:700;cursor:pointer}
+  .btn-main{background:linear-gradient(135deg,#2563eb,#38bdf8);color:#fff}
+  .btn-ghost{background:rgba(255,255,255,.05);color:var(--text);border:1px solid var(--line)!important}
+
+  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#0b1224;border:1px solid var(--line);
+    color:#fff;padding:11px 18px;border-radius:11px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;box-shadow:0 12px 30px rgba(0,0,0,.5)}
+  .toast.show{opacity:1}
+
+  @media(max-width:560px){ .grid{grid-template-columns:1fr;perspective:none} .card:hover{transform:translateY(-5px)} }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <span class="logo">🏭</span>
+      <div>SMART FACTORY 라인 모니터<small>NUC 통합 · 카드 뷰 (3D)</small></div>
+    </div>
+    <div class="summary">
+      <span class="chip"><span class="d d-live"></span><b id="cLive">0</b> LIVE</span>
+      <span class="chip"><span class="d d-warn"></span><b id="cWarn">0</b> 점검</span>
+      <span class="chip"><span class="d d-off"></span><b id="cOff">0</b> 오프</span>
+    </div>
+    <div class="filters" id="filters">
+      <button class="filter-btn active" data-filter="all">전체 <span class="cnt" id="fAll"></span></button>
+      <button class="filter-btn" data-filter="line">⚙️ 생산 <span class="cnt" id="fLine"></span></button>
+      <button class="filter-btn" data-filter="qc">🔬 품질 <span class="cnt" id="fQc"></span></button>
+      <button class="filter-btn" data-filter="log">📦 물류 <span class="cnt" id="fLog"></span></button>
+      <button class="filter-btn" data-filter="ship">🚚 출고 <span class="cnt" id="fShip"></span></button>
+    </div>
+    <a class="home" href="/">← 템플릿 선택</a>
+  </div>
+
+  <div class="wrap" id="wrap"></div>
+  <div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+//  [TEAM] 공장 카드 그룹 정의 (샘플)
+//  - 백엔드 /api/cameras 의 이름(front/top/ipcam1)은 자동으로 실제 영상이 됩니다.
+//  - 'demo_*' 는 데모 카드(영상 없음). 실제 연결 시 key를 백엔드 이름으로 바꾸세요.
+//  - kpi 숫자(불량률/생산량 등)는 발표용 샘플 값입니다. 팀이 자유롭게 바꾸세요.
+// ============================================================
+var GROUPS = [
+  { id:'line', cls:'g-line', ic:'⚙️', title:'생산 라인', sub:'라인별 실시간 작업 영상',
+    cards:[
+      { key:'front', label:'A라인 로봇 전방', loc:'A-01', st:'live', kpis:[['98%','가동'],['1,240','금일생산']] },
+      { key:'top', label:'A라인 상부 뷰', loc:'A-02', st:'live', kpis:[['98%','가동'],['1,240','금일생산']] },
+      { key:'demo_a3', label:'A라인 컨베이어', loc:'A-03', st:'live', kpis:[['12','m/min','warn'],['OK','벨트']] },
+      { key:'demo_b1', label:'B라인 투입부', loc:'B-01', st:'live', kpis:[['95%','가동'],['860','금일생산']] },
+      { key:'demo_b2', label:'B라인 조립셀', loc:'B-02', st:'off', kpis:[['--','가동'],['0','금일생산']] },
+    ]},
+  { id:'qc', cls:'g-qc', ic:'🔬', title:'품질 검증', sub:'비전 검사 · 불량 판정 카메라',
+    cards:[
+      { key:'demo_qc1', label:'QC 비전검사 #1', loc:'Q-01', st:'live', kpis:[['0.4%','불량률','warn'],['2,310','검사수']] },
+      { key:'demo_qc2', label:'QC 치수측정', loc:'Q-02', st:'live', kpis:[['99.6%','합격'],['±0.02','공차']] },
+      { key:'demo_qc3', label:'QC 표면검사', loc:'Q-03', st:'warn', kpis:[['1.1%','불량률','warn'],['저조도','경고']] },
+    ]},
+  { id:'log', cls:'g-log', ic:'📦', title:'물류 / 창고',  sub:'입고 · 자재/완제품 창고',
+    cards:[
+      { key:'demo_wh1', label:'자재 창고 A', loc:'L-01', st:'warn', kpis:[['82%','재고'],['주의','온도']] },
+      { key:'demo_wh2', label:'완제품 창고', loc:'L-02', st:'live', kpis:[['64%','재고'],['OK','온도']] },
+      { key:'demo_inb', label:'입고 검수대', loc:'L-03', st:'live', kpis:[['5','입고대기'],['OK','상태']] },
+    ]},
+  { id:'ship', cls:'g-ship', ic:'🚚', title:'출고 / 출입',  sub:'정문 · 포장 · 출고 도크',
+    cards:[
+      { key:'ipcam1', label:'정문 입구 (IP)', loc:'S-01', st:'live', kpis:[['OK','출입'],['3','대기차량']] },
+      { key:'demo_pack1', label:'포장기 #1', loc:'S-02', st:'live', kpis:[['540','금일포장'],['OK','상태']] },
+      { key:'demo_ship', label:'출고 도크', loc:'S-03', st:'live', kpis:[['7','출고대기'],['2','도크']] },
+    ]},
+];
+
+var realSet = {}, chCounter = 1, cntLive=0, cntWarn=0, cntOff=0;
+
+function toast(msg){ var t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(function(){t.classList.remove('show');},1800); }
+
+function cardDom(c){
+  var card=document.createElement('div'); card.className='card';
+  var s = c.st==='live'?'d-live':(c.st==='warn'?'d-warn':'d-off');
+  var stTxt = c.st==='live'?'LIVE':(c.st==='warn'?'점검':'오프');
+  var screen = c.real
+    ? '<img src="/stream/'+c.key+'" alt="'+c.label+'"><div class="scan"></div>'
+    : '<div class="demo"><div class="big">🎥</div>데모 (미연결)</div>';
+  var kpiHtml = c.kpis.map(function(k){
+    var cls = k[2]==='warn'?'warn':'ok';
+    return '<div class="kpibox '+cls+'"><div class="v">'+k[0]+'</div><div class="l">'+k[1]+'</div></div>';
+  }).join('');
+  card.innerHTML =
+    '<div class="sheen"></div>'+
+    '<div class="screen">'+screen+
+      '<div class="tag"><span class="d '+s+'"></span>'+stTxt+'</div>'+
+      '<div class="ch">CH'+String(c.ch).padStart(2,'0')+'</div>'+
+    '</div>'+
+    '<div class="meta">'+
+      '<div class="nm">'+c.label+'<span style="font-size:11px;color:var(--muted);font-family:monospace">'+c.loc+'</span></div>'+
+      '<div class="sub"><span>📍 '+c.loc+'</span><span>'+(c.real?'실시간':'데모')+'</span></div>'+
+      '<div class="kpis">'+kpiHtml+'</div>'+
+    '</div>'+
+    '<div class="foot">'+
+      '<button class="btn-main" data-snap="'+(c.real?c.key:'')+'">📸 스냅샷</button>'+
+      '<button class="btn-ghost">상세</button>'+
+    '</div>';
+  // 3D tilt: 마우스 위치 따라 기울이기
+  card.addEventListener('mousemove', function(e){
+    var r=card.getBoundingClientRect();
+    var px=(e.clientX-r.left)/r.width-0.5, py=(e.clientY-r.top)/r.height-0.5;
+    card.style.transform='translateY(-8px) rotateX('+(-py*10)+'deg) rotateY('+(px*12)+'deg) scale(1.015)';
+  });
+  card.addEventListener('mouseleave', function(){ card.style.transform=''; });
+  // 스냅샷
+  card.querySelector('[data-snap]').addEventListener('click', function(ev){
+    ev.stopPropagation();
+    var k=this.getAttribute('data-snap');
+    if(!k){ toast(c.label+' 데모는 저장 불가'); return; }
+    fetch('/snapshot/'+k).then(function(r){return r.json();}).then(function(j){
+      toast(j.ok ? (c.label+' 스냅샷 저장됨') : ('저장 실패: '+j.error));
+    });
+  });
+  return card;
+}
+
+function build(){
+  var wrap=document.getElementById('wrap');
+  var gcount={};
+  GROUPS.forEach(function(g){
+    var sec=document.createElement('div'); sec.className='group'; sec.dataset.group=g.id;
+    var live=g.cards.filter(function(c){return c.st==='live';}).length;
+    sec.innerHTML='<div class="group-head '+g.cls+'"><div class="ic">'+g.ic+'</div>'+
+      '<div><h2>'+g.title+'</h2><div class="sub">'+g.sub+'</div></div>'+
+      '<div class="gcount">'+g.cards.length+'대 · LIVE '+live+'</div></div>';
+    var grid=document.createElement('div'); grid.className='grid';
+    g.cards.forEach(function(c){
+      c.ch=chCounter++; c.real=!!realSet[c.key];
+      if(c.st==='live')cntLive++; else if(c.st==='warn')cntWarn++; else cntOff++;
+      grid.appendChild(cardDom(c));
+    });
+    sec.appendChild(grid); wrap.appendChild(sec);
+    gcount[g.id]=g.cards.length;
+  });
+  document.getElementById('cLive').textContent=cntLive;
+  document.getElementById('cWarn').textContent=cntWarn;
+  document.getElementById('cOff').textContent=cntOff;
+  // 필터 메뉴 카운트
+  var total=GROUPS.reduce(function(s,g){return s+g.cards.length;},0);
+  document.getElementById('fAll').textContent=total;
+  document.getElementById('fLine').textContent=gcount.line||0;
+  document.getElementById('fQc').textContent=gcount.qc||0;
+  document.getElementById('fLog').textContent=gcount.log||0;
+  document.getElementById('fShip').textContent=gcount.ship||0;
+  setupFilters();
+}
+
+// [TEAM] 상단 필터 — 클릭하면 해당 그룹만 표시 (전체는 모두)
+function setupFilters(){
+  document.querySelectorAll('.filter-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      var f=btn.dataset.filter;
+      document.querySelectorAll('.group').forEach(function(sec){
+        var show=(f==='all'||sec.dataset.group===f);
+        sec.style.display = show?'':'none';
+        if(show){ sec.style.animation='none'; void sec.offsetWidth; sec.style.animation=''; } // 재생
+      });
+      window.scrollTo({top:0,behavior:'smooth'});
+    });
+  });
+}
+
+fetch('/api/cameras').then(function(r){return r.json();}).then(function(list){
+  list.forEach(function(c){ realSet[c.name]=true; });
+  build();
+}).catch(function(){ build(); });
+</script>
+</body>
+</html>
