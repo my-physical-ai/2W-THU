@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phase 1 구현 가이드 — 네트워크 + rosbridge + ROSboard + 등록 서버</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --pri:#059669;--pri-l:#D1FAE5;--pri-d:#064E3B;
+  --sec:#0891B2;--sec-l:#CFFAFE;--sec-d:#164E63;
+  --pur:#7C3AED;--pur-l:#EDE9FE;
+  --warn:#D97706;--warn-l:#FEF3C7;
+  --err:#DC2626;--err-l:#FEE2E2;
+  --blue:#2563EB;--blue-l:#DBEAFE;
+  --or:#EA580C;--or-l:#FFF7ED;
+  --srf:#F8FAFC;--card:#FFFFFF;--txt:#1E293B;--mut:#64748B;--bd:#E2E8F0;
+}
+body{font-family:'IBM Plex Sans KR',sans-serif;color:var(--txt);background:var(--srf);line-height:1.8;font-size:16px}
+code,pre{font-family:'JetBrains Mono',monospace}
+.container{max-width:920px;margin:0 auto;padding:0 1.5rem}
+section{padding:3rem 0}
+h2{font-size:1.6rem;font-weight:900;margin-bottom:1.5rem;line-height:1.3}
+h3{font-size:1.15rem;font-weight:700;margin:2rem 0 1rem}
+h4{font-size:1rem;font-weight:700;margin:1.25rem 0 .75rem}
+p{margin-bottom:1rem}
+
+/* 히어로 */
+.hero{background:linear-gradient(135deg,#064E3B 0%,#059669 35%,#0891B2 65%,#2563EB 100%);color:white;padding:4rem 0 3.5rem;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-40%;right:-15%;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.08) 0%,transparent 70%)}
+.hero .container{position:relative;z-index:1}
+.hero-tags{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1.25rem}
+.hero-tag{background:rgba(255,255,255,.15);backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:.3rem .9rem;font-size:.8rem;font-weight:500}
+.hero h1{font-size:2.2rem;font-weight:900;line-height:1.2;margin-bottom:1rem}
+.hero-sub{font-size:1.05rem;opacity:.92;line-height:1.8;max-width:750px}
+
+/* 로드맵 */
+.roadmap{display:flex;align-items:center;justify-content:center;gap:.4rem;padding:1.5rem;background:var(--srf);border-radius:16px;overflow-x:auto;margin:1.5rem 0}
+.rm-node{border:2px solid;border-radius:14px;padding:1rem;text-align:center;min-width:140px;transition:transform .2s;background:var(--card)}
+.rm-node:hover{transform:translateY(-3px);box-shadow:0 6px 16px rgba(0,0,0,.1)}
+.rm-icon{font-size:2rem;margin-bottom:.3rem}
+.rm-title{font-weight:700;font-size:.85rem}
+.rm-desc{font-size:.72rem;color:var(--mut);margin-top:.2rem}
+.rm-arrow{flex-shrink:0;color:var(--mut);font-size:1.3rem;font-weight:700}
+.rm-node.current{border-color:var(--pri);background:var(--pri-l);box-shadow:0 4px 12px rgba(5,150,105,.15)}
+
+/* 스텝 번호 배지 */
+.step-num{display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:50%;font-size:1.4rem;font-weight:900;color:white;margin-bottom:.75rem}
+
+/* 비유 박스 */
+.analogy{display:flex;gap:1.25rem;padding:1.5rem;border-radius:14px;border-left:5px solid;margin:1.5rem 0}
+.analogy.green{background:var(--pri-l);border-color:var(--pri)}
+.analogy.teal{background:var(--sec-l);border-color:var(--sec)}
+.analogy.purple{background:var(--pur-l);border-color:var(--pur)}
+.analogy.orange{background:var(--or-l);border-color:var(--or)}
+.analogy.blue{background:var(--blue-l);border-color:var(--blue)}
+.analogy-icon{font-size:2.8rem;flex-shrink:0}
+.analogy-title{font-weight:700;font-size:.82rem;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem}
+.analogy.green .analogy-title{color:var(--pri)}
+.analogy.teal .analogy-title{color:var(--sec)}
+.analogy.purple .analogy-title{color:var(--pur)}
+.analogy.orange .analogy-title{color:var(--or)}
+.analogy.blue .analogy-title{color:var(--blue)}
+.analogy-text{line-height:1.8;font-size:.95rem}
+
+/* 코드 블록 */
+.code{background:#1E293B;color:#E2E8F0;border-radius:12px;padding:1.25rem;overflow-x:auto;font-size:.84rem;line-height:1.7;margin:1rem 0;white-space:pre}
+.code .cm{color:#94A3B8}.code .hl{color:#38BDF8}.code .st{color:#86EFAC}.code .wr{color:#FBBF24}.code .vp{color:#A5B4FC}
+.code-title{background:#334155;color:#CBD5E1;padding:.5rem 1rem;border-radius:12px 12px 0 0;font-size:.78rem;font-weight:600;font-family:'JetBrains Mono',monospace;margin-top:1rem}
+.code-title + .code{border-radius:0 0 12px 12px;margin-top:0}
+
+/* 팁/주의 박스 */
+.co{display:flex;gap:.7rem;padding:1rem 1.2rem;border-radius:10px;align-items:flex-start;margin:1rem 0;font-size:.92rem}
+.co-i{font-size:1.2rem;flex-shrink:0;padding-top:.1rem}.co-t{line-height:1.7}
+.co-tip{background:var(--pri-l);border-left:3px solid var(--pri)}
+.co-warn{background:var(--warn-l);border-left:3px solid var(--warn)}
+.co-err{background:var(--err-l);border-left:3px solid var(--err)}
+.co-info{background:var(--sec-l);border-left:3px solid var(--sec)}
+
+/* 실습 단계 카드 */
+.step{background:var(--card);border-radius:14px;padding:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,.06);border:1px solid var(--bd);margin:1.25rem 0}
+.step-badge{display:inline-flex;align-items:center;gap:.3rem;font-size:.72rem;font-weight:700;padding:4px 10px;border-radius:6px;margin-bottom:.5rem;font-family:'JetBrains Mono',monospace}
+.step-badge.green{background:var(--pri-l);color:var(--pri)}.step-badge.teal{background:var(--sec-l);color:var(--sec)}
+.step-badge.purple{background:var(--pur-l);color:var(--pur)}.step-badge.orange{background:var(--or-l);color:var(--or)}
+.step-badge.blue{background:var(--blue-l);color:var(--blue)}
+
+/* 아키텍처 다이어그램 */
+.arch{display:flex;flex-direction:column;align-items:center;gap:0;padding:2rem;background:var(--srf);border-radius:16px;margin:1.5rem 0}
+.arch-l{width:100%;max-width:700px;border:2px solid;border-radius:14px;padding:1.2rem}
+.arch-l.green{border-color:var(--pri);background:color-mix(in srgb,var(--pri) 5%,white)}
+.arch-l.teal{border-color:var(--sec);background:color-mix(in srgb,var(--sec) 5%,white)}
+.arch-l.purple{border-color:var(--pur);background:color-mix(in srgb,var(--pur) 5%,white)}
+.arch-l.orange{border-color:var(--or);background:color-mix(in srgb,var(--or) 5%,white)}
+.arch-l.blue{border-color:var(--blue);background:color-mix(in srgb,var(--blue) 5%,white)}
+.arch-lb{font-weight:700;font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem}
+.arch-l.green .arch-lb{color:var(--pri)}.arch-l.teal .arch-lb{color:var(--sec)}.arch-l.purple .arch-lb{color:var(--pur)}.arch-l.orange .arch-lb{color:var(--or)}.arch-l.blue .arch-lb{color:var(--blue)}
+.arch-bxs{display:flex;gap:.6rem;flex-wrap:wrap}
+.arch-bx{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:.5rem 1rem;font-size:.85rem;font-weight:500}
+.arch-arr{color:var(--mut);font-size:1.2rem;padding:.2rem 0}
+
+/* 비교 카드 */
+.compare{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.25rem;margin:1.5rem 0}
+.ccard{border-radius:14px;overflow:hidden;box-shadow:0 3px 10px rgba(0,0,0,.08);background:var(--card)}
+.ccard-h{padding:1rem;color:white;text-align:center}
+.ccard-h h4{margin:.3rem 0 0;font-size:.95rem}.ccard-icon{font-size:1.8rem}
+.ccard-b{padding:.75rem 1rem}
+.ccard-item{display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--bd);font-size:.85rem}
+.ccard-item:last-child{border-bottom:none}
+.ccard-k{color:var(--mut)}.ccard-v{font-weight:700}
+
+/* 수치 카드 */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin:1.5rem 0}
+.stat{background:var(--card);border-radius:14px;padding:1.5rem;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.06);border:1px solid var(--bd)}
+.stat-num{font-size:2rem;font-weight:900;line-height:1}
+.stat-label{font-weight:700;font-size:.85rem;margin-top:.5rem}
+.stat-desc{font-size:.78rem;color:var(--mut);margin-top:.2rem}
+
+/* 플로우 */
+.flow{display:flex;align-items:center;justify-content:center;gap:.5rem;padding:1.5rem;background:var(--srf);border-radius:16px;overflow-x:auto;margin:1.5rem 0}
+.flow-node{background:var(--card);border:2px solid var(--node-color,var(--pri));border-radius:14px;padding:1rem;text-align:center;min-width:120px;transition:transform .2s}
+.flow-node:hover{transform:translateY(-3px);box-shadow:0 6px 16px rgba(0,0,0,.1)}
+.flow-icon{font-size:1.8rem;margin-bottom:.3rem}
+.flow-title{font-weight:700;font-size:.82rem}
+.flow-desc{font-size:.72rem;color:var(--mut);margin-top:.2rem}
+.flow-arrow{flex-shrink:0;color:var(--mut);font-size:1.3rem;font-weight:700}
+
+/* 체크리스트 */
+.checklist{background:var(--card);border-radius:14px;padding:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,.06);border:2px solid var(--pri);margin:1.5rem 0}
+.check-item{display:flex;align-items:center;gap:.6rem;padding:.45rem 0;font-size:.9rem}
+.check-item input{width:20px;height:20px;accent-color:var(--pri)}
+
+/* 테이블 */
+.tbl{width:100%;border-collapse:collapse;margin:.75rem 0;font-size:.88rem}
+.tbl th{background:var(--pri);color:white;padding:.6rem .8rem;text-align:left;font-weight:600;font-size:.82rem}
+.tbl th:first-child{border-radius:10px 0 0 0}.tbl th:last-child{border-radius:0 10px 0 0}
+.tbl td{padding:.5rem .8rem;border-bottom:1px solid var(--bd)}.tbl tbody tr:hover{background:var(--pri-l)}
+.tbl code{background:var(--srf);padding:.1rem .4rem;border-radius:4px;font-size:.82rem}
+
+/* 파일 트리 */
+.file-tree{background:#1E293B;color:#CBD5E1;border-radius:12px;padding:1.25rem;font-family:'JetBrains Mono',monospace;font-size:.84rem;line-height:2;margin:1rem 0}
+.file-tree .dir{color:#38BDF8}.file-tree .file{color:#86EFAC}.file-tree .desc{color:#94A3B8;font-style:italic}
+
+/* 탭 */
+.tab-wrap{margin:1.5rem 0}
+.tab-btns{display:flex;gap:3px;background:var(--bd);border-radius:10px 10px 0 0;padding:3px}
+.tab-btn{flex:1;padding:.6rem;border:none;background:none;font-family:'IBM Plex Sans KR',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;border-radius:8px 8px 0 0;color:var(--mut);transition:.2s}
+.tab-btn:hover{background:rgba(0,0,0,.03)}.tab-btn.on{background:var(--card);color:var(--txt);box-shadow:0 -1px 4px rgba(0,0,0,.05)}
+.tab-panel{display:none;background:var(--card);border:1px solid var(--bd);border-top:none;border-radius:0 0 12px 12px;padding:1.5rem}
+.tab-panel.on{display:block}
+
+/* 섹션 교대 배경 */
+.sec-alt{background:var(--card);border-top:1px solid var(--bd);border-bottom:1px solid var(--bd)}
+
+/* 타임라인 */
+.timeline{position:relative;padding-left:40px;margin:1.5rem 0}
+.timeline::before{content:'';position:absolute;left:16px;top:0;bottom:0;width:3px;background:var(--bd);border-radius:2px}
+.tl-item{position:relative;margin-bottom:2rem}
+.tl-dot{position:absolute;left:-32px;top:4px;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;color:white}
+.tl-content{background:var(--card);border-radius:12px;padding:1.25rem;box-shadow:0 2px 8px rgba(0,0,0,.05);border:1px solid var(--bd)}
+.tl-title{font-weight:700;font-size:1rem;margin-bottom:.5rem}
+
+/* 푸터 */
+.footer{background:var(--pri-d);color:rgba(255,255,255,.7);padding:1.5rem 0;text-align:center;font-size:.82rem}
+
+@media(max-width:768px){.hero h1{font-size:1.5rem}.hero{padding:2.5rem 0 2rem}h2{font-size:1.3rem}.flow,.roadmap{flex-direction:column}.flow-arrow,.rm-arrow{transform:rotate(90deg)}.compare{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.analogy{flex-direction:column;gap:.75rem}.tab-btns{flex-wrap:wrap}}
+@media print{.hero{background:#064E3B!important}.co,.analogy,.step,.tl-content{break-inside:avoid}}
+</style>
+</head>
+<body>
+
+<!-- ======= 히어로 ======= -->
+<header class="hero">
+<div class="container">
+  <div class="hero-tags">
+    <span class="hero-tag">📦 Phase 1 구현</span>
+    <span class="hero-tag">🌐 네트워크 셋업</span>
+    <span class="hero-tag">🔌 rosbridge 9090</span>
+    <span class="hero-tag">📡 ROSboard 8888</span>
+    <span class="hero-tag">🐍 FastAPI 8080</span>
+    <span class="hero-tag">🤖 LeKiwi 로봇</span>
+  </div>
+  <h1>Phase 1 구현 가이드<br>네트워크 → rosbridge → ROSboard → 등록 서버</h1>
+  <p class="hero-sub">
+    LeKiwi 로봇을 <strong>눈으로 보이게</strong> 만드는 전체 과정을 단계별로 구현합니다.<br>
+    네트워크 준비부터 대시보드 접속까지, <strong>5단계</strong>만 따라하면 됩니다. 🚀
+  </p>
+</div>
+</header>
+
+<!-- ======= Phase 1 로드맵 ======= -->
+<section>
+<div class="container">
+  <h2>🗺️ Phase 1이 전체 로드맵에서 하는 일</h2>
+
+  <div class="roadmap">
+    <div class="rm-node current" style="border-color:var(--pri)">
+      <div class="rm-icon">👁️</div>
+      <div class="rm-title">Phase 1</div>
+      <div class="rm-desc">로봇이 보이게</div>
+    </div>
+    <div class="rm-arrow">→</div>
+    <div class="rm-node" style="border-color:var(--blue)">
+      <div class="rm-icon">📀</div>
+      <div class="rm-title">Phase 2</div>
+      <div class="rm-desc">과거 데이터 저장</div>
+    </div>
+    <div class="rm-arrow">→</div>
+    <div class="rm-node" style="border-color:var(--warn)">
+      <div class="rm-icon">📊</div>
+      <div class="rm-title">Phase 3</div>
+      <div class="rm-desc">대시보드 고도화</div>
+    </div>
+    <div class="rm-arrow">→</div>
+    <div class="rm-node" style="border-color:var(--pur)">
+      <div class="rm-icon">🖥️</div>
+      <div class="rm-title">Phase 4</div>
+      <div class="rm-desc">인프라 모니터링</div>
+    </div>
+  </div>
+
+  <div class="analogy green">
+    <div class="analogy-icon">🏥</div>
+    <div>
+      <div class="analogy-title">병원에 비유하면</div>
+      <p class="analogy-text">
+        환자(로봇)가 입원하면 ① <strong>접수(등록 서버)</strong>를 하고, ② <strong>모니터(ROSboard)</strong>를 연결합니다.<br>
+        모니터와 환자 사이에는 <strong>변환기(rosbridge)</strong>가 필요해요 — 환자의 심장 박동 신호를 모니터가 이해할 수 있는 형태로 바꿔주거든요.<br>
+        하지만 그 전에 먼저 <strong>병원까지 오는 길(네트워크)</strong>이 있어야 합니다!
+      </p>
+    </div>
+  </div>
+
+  <!-- 5단계 구현 플로우 -->
+  <h3>🔧 구현 5단계 플로우</h3>
+  <div class="flow">
+    <div class="flow-node" style="--node-color:var(--sec)">
+      <div class="flow-icon">🌐</div>
+      <div class="flow-title">A. 네트워크</div>
+      <div class="flow-desc">Pi5 ↔ NUC 연결</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node" style="--node-color:var(--blue)">
+      <div class="flow-icon">🔌</div>
+      <div class="flow-title">B. rosbridge</div>
+      <div class="flow-desc">DDS → WebSocket</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node" style="--node-color:var(--pur)">
+      <div class="flow-icon">📡</div>
+      <div class="flow-title">C. ROSboard</div>
+      <div class="flow-desc">토픽 시각화</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node" style="--node-color:var(--or)">
+      <div class="flow-icon">🐍</div>
+      <div class="flow-title">D. 등록 서버</div>
+      <div class="flow-desc">FastAPI 8080</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node" style="--node-color:var(--pri)">
+      <div class="flow-icon">✅</div>
+      <div class="flow-title">E. 검증</div>
+      <div class="flow-desc">통합 테스트</div>
+    </div>
+  </div>
+
+  <!-- 3개 프로그램 비교 -->
+  <h3>🔌 3개 프로그램의 역할 비교</h3>
+  <div class="compare">
+    <div class="ccard">
+      <div class="ccard-h" style="background:var(--blue)"><span class="ccard-icon">🔌</span><h4>rosbridge</h4></div>
+      <div class="ccard-b">
+        <div class="ccard-item"><span class="ccard-k">역할</span><span class="ccard-v">프로토콜 변환기</span></div>
+        <div class="ccard-item"><span class="ccard-k">변환</span><span class="ccard-v">DDS → WebSocket</span></div>
+        <div class="ccard-item"><span class="ccard-k">포트</span><span class="ccard-v">9090</span></div>
+        <div class="ccard-item"><span class="ccard-k">설치</span><span class="ccard-v">apt (ROS2 패키지)</span></div>
+        <div class="ccard-item"><span class="ccard-k">필수?</span><span class="ccard-v">커스텀 대시보드용</span></div>
+      </div>
+    </div>
+    <div class="ccard">
+      <div class="ccard-h" style="background:var(--pur)"><span class="ccard-icon">📡</span><h4>ROSboard</h4></div>
+      <div class="ccard-b">
+        <div class="ccard-item"><span class="ccard-k">역할</span><span class="ccard-v">토픽 웹 뷰어</span></div>
+        <div class="ccard-item"><span class="ccard-k">연결</span><span class="ccard-v">DDS 직접 연결</span></div>
+        <div class="ccard-item"><span class="ccard-k">포트</span><span class="ccard-v">8888</span></div>
+        <div class="ccard-item"><span class="ccard-k">설치</span><span class="ccard-v">pip (GitHub)</span></div>
+        <div class="ccard-item"><span class="ccard-k">필수?</span><span class="ccard-v">카메라/IMU 시각화</span></div>
+      </div>
+    </div>
+    <div class="ccard">
+      <div class="ccard-h" style="background:var(--or)"><span class="ccard-icon">🐍</span><h4>등록 서버</h4></div>
+      <div class="ccard-b">
+        <div class="ccard-item"><span class="ccard-k">역할</span><span class="ccard-v">로봇 등록 & 관리</span></div>
+        <div class="ccard-item"><span class="ccard-k">연결</span><span class="ccard-v">rosbridge 경유</span></div>
+        <div class="ccard-item"><span class="ccard-k">포트</span><span class="ccard-v">8080</span></div>
+        <div class="ccard-item"><span class="ccard-k">설치</span><span class="ccard-v">pip (FastAPI)</span></div>
+        <div class="ccard-item"><span class="ccard-k">필수?</span><span class="ccard-v">로봇 Fleet 관리</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ======= A. 네트워크 사전 준비 ======= -->
+<section class="sec-alt">
+<div class="container">
+  <div class="step-num" style="background:var(--sec)">A</div>
+  <h2>A. 네트워크 사전 준비 (LeKiwi ↔ NUC 연결)</h2>
+
+  <div class="analogy teal">
+    <div class="analogy-icon">🛣️</div>
+    <div>
+      <div class="analogy-title">길을 먼저 만들어야 차가 다닌다</div>
+      <p class="analogy-text">
+        rosbridge, ROSboard, 등록 서버를 아무리 잘 설치해도 <strong>로봇과 NUC 사이에 길(네트워크)이 없으면 소용없습니다</strong>.<br>
+        우리 환경에서는 <strong>ASUS 라우터로 만든 독립 로봇망(10.10.1.x)</strong>이 그 길입니다.<br>
+        자세한 네트워크 셋업은 <strong>lekiwi-network-rtsp-edu.html</strong>을 참고하세요.
+      </p>
+    </div>
+  </div>
+
+  <!-- 네트워크 아키텍처 요약 -->
+  <h3>📐 우리 네트워크 구성 (요약)</h3>
+  <div class="arch">
+    <div class="arch-l orange">
+      <div class="arch-lb">🍓 라즈베리파이 5 (Pi5) — LeKiwi 로봇</div>
+      <div class="arch-bxs">
+        <div class="arch-bx">wlan0 → <strong>10.10.1.10</strong> (로봇망)</div>
+        <div class="arch-bx">wlx..USB동글 → 192.168.50.110 (인터넷)</div>
+        <div class="arch-bx">wg0 → 172.10.1.10 (VPN)</div>
+      </div>
+    </div>
+    <div class="arch-arr">⬍ ASUS 라우터 (10.10.1.0/24 독립망)</div>
+    <div class="arch-l teal">
+      <div class="arch-lb">💻 NUC (Control PC) — Phase 1 서버 설치 대상</div>
+      <div class="arch-bxs">
+        <div class="arch-bx">eno1 유선 → <strong>10.10.1.20</strong> (로봇망)</div>
+        <div class="arch-bx">wlp.. Wi-Fi → 192.168.50.190 (인터넷)</div>
+        <div class="arch-bx">wg0 → 172.10.1.20 (VPN)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-badge teal">📌 네트워크 확인 명령어</div>
+    <h4>NUC에서 확인 (Phase 1 서버가 설치될 곳)</h4>
+    <div class="code"><span class="cm"># 1. IP 주소 확인</span>
+ip addr show | grep "inet "
+<span class="cm"># ✅ eno1: 10.10.1.20 (로봇망), wlp...: 192.168.50.190 (인터넷)</span>
+
+<span class="cm"># 2. 로봇(Pi5)과 통신 확인</span>
+ping -c 2 <span class="hl">10.10.1.10</span>
+<span class="cm"># ✅ 0% packet loss → 네트워크 OK!</span>
+
+<span class="cm"># 3. 인터넷 확인</span>
+ping -c 2 8.8.8.8
+<span class="cm"># ✅ 0% packet loss → 인터넷 OK!</span>
+
+<span class="cm"># 4. 기본 라우팅 확인</span>
+ip route | grep default
+<span class="cm"># ✅ default via 192.168.50.1 dev wlp... ← Wi-Fi가 인터넷 기본 경로</span>
+<span class="cm"># (유선에 default가 없어야 합니다 → ipv4.never-default yes)</span></div>
+  </div>
+
+  <div class="co co-warn">
+    <div class="co-i">⚠️</div>
+    <div class="co-t"><strong>핵심: DDS는 네트워크에 민감합니다!</strong><br>
+    인터페이스가 2개 이상이면 반드시 FastDDS XML로 화이트리스트 설정이 필요합니다. VPN(172.10.1.x)으로 ROS2 통신을 격리하는 것이 가장 안정적입니다. 상세 설정은 <code>lekiwi-network-rtsp-edu.html</code>의 STEP 3을 참고하세요.</div>
+  </div>
+
+  <div class="co co-err">
+    <div class="co-i">🚨</div>
+    <div class="co-t"><strong>네트워크가 안 되면 다음 단계로 절대 넘어가지 마세요!</strong><br>
+    <code>ping 10.10.1.10</code>이 실패하면 rosbridge, ROSboard, 등록 서버 모두 로봇 데이터를 받을 수 없습니다.</div>
+  </div>
+</div>
+</section>
+
+<!-- ======= 사전 설정: Ubuntu 24.04 ======= -->
+<section>
+<div class="container">
+  <div class="step-num" style="background:var(--warn)">⚠️</div>
+  <h2>⚠️ Ubuntu 24.04 사전 설정 (한 번만!)</h2>
+
+  <div class="analogy orange">
+    <div class="analogy-icon">🔒</div>
+    <div>
+      <div class="analogy-title">24.04에서 달라진 점</div>
+      <p class="analogy-text">
+        Ubuntu 24.04는 Python 3.12를 사용하며, 시스템 Python에 <code>pip install</code>이 기본 차단됩니다.<br>
+        아래 설정을 먼저 해두면 이후 작업이 수월합니다.
+      </p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-badge orange">📌 사전 설정 — NUC에서 한 번만 실행</div>
+    <div class="code"><span class="cm"># 1. ROS2 Jazzy 자동 로드 (새 터미널마다 source 안 해도 됨)</span>
+echo '<span class="st">source /opt/ros/jazzy/setup.bash</span>' >> ~/.bashrc
+
+<span class="cm"># 2. pip install 허용 (Ubuntu 24.04 보안 정책 완화)</span>
+mkdir -p ~/.config/pip
+cat > ~/.config/pip/pip.conf << 'EOF'
+[global]
+break-system-packages = true
+EOF
+
+<span class="cm"># 3. 적용 확인</span>
+source ~/.bashrc
+ros2 --version     <span class="cm"># ✅ ros2 jazzy 나오면 성공</span>
+pip3 --version     <span class="cm"># ✅ pip 24.x 나오면 성공</span></div>
+  </div>
+</div>
+</section>
+
+<!-- ======= B. STEP 1: rosbridge ======= -->
+<section class="sec-alt">
+<div class="container">
+  <div class="step-num" style="background:var(--blue)">B</div>
+  <h2>B. rosbridge 설치 (DDS → WebSocket 변환기)</h2>
+
+  <div class="analogy blue">
+    <div class="analogy-icon">🌐</div>
+    <div>
+      <div class="analogy-title">통역사에 비유하면</div>
+      <p class="analogy-text">
+        ROS2 로봇은 <strong>DDS라는 언어</strong>로 말합니다. 웹 브라우저는 <strong>WebSocket이라는 언어</strong>를 사용합니다.<br>
+        rosbridge는 이 둘 사이에서 <strong>실시간 통역</strong>을 해주는 프로그램입니다.
+      </p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-badge blue">📌 B-1 · rosbridge 설치</div>
+    <h4>🖥️ NUC (터미널 1)</h4>
+    <div class="code"><span class="cm"># rosbridge 서버 패키지 설치</span>
+<span class="cm"># ros-jazzy-rosbridge-server = "ROS2 Jazzy용 rosbridge 서버"</span>
+<span class="hl">sudo</span> apt update
+<span class="hl">sudo</span> apt install ros-jazzy-rosbridge-server -y
+
+<span class="cm"># 설치 확인 (3개 패키지가 보여야 함)</span>
+ros2 pkg list | grep rosbridge
+<span class="cm"># ✅ rosbridge_server, rosbridge_library, rosbridge_msgs</span></div>
+  </div>
+
+  <div class="step">
+    <div class="step-badge blue">📌 B-2 · rosbridge 실행</div>
+    <div class="code"><span class="cm"># rosbridge 실행 — 포트 9090에서 WebSocket 대기</span>
+ros2 launch rosbridge_server rosbridge_websocket_launch.xml
+
+<span class="cm"># ✅ 이런 메시지가 나오면 성공:</span>
+<span class="st">[rosbridge_websocket-1] Rosbridge WebSocket server started on port 9090</span>
+
+<span class="cm"># ⚠️ 이 터미널은 계속 열어둡니다! (Ctrl+C 하면 종료됩니다)</span></div>
+  </div>
+
+  <div class="step">
+    <div class="step-badge blue">📌 B-3 · 동작 확인</div>
+    <h4>⭐ 새 터미널(터미널 2)을 열고 확인</h4>
+    <div class="code"><span class="cm"># 포트가 열려있는지 확인</span>
+ss -tlnp | grep 9090
+<span class="cm"># ✅ LISTEN 0.0.0.0:9090 이면 정상</span>
+
+<span class="cm"># HTTP로 접근하여 WebSocket 서버 확인</span>
+curl -s http://localhost:9090
+<span class="cm"># ✅ 'Can "Upgrade" only to "WebSocket".' → 정상!</span></div>
+  </div>
+
+  <div class="co co-err">
+    <div class="co-i">🚨</div>
+    <div class="co-t"><strong>"Address already in use" 오류?</strong> → 이미 rosbridge가 실행 중. <code>pkill -f rosbridge</code>로 종료 후 다시 실행</div>
+  </div>
+</div>
+</section>
+
+<!-- ======= C. STEP 2: ROSboard ======= -->
+<section>
+<div class="container">
+  <div class="step-num" style="background:var(--pur)">C</div>
+  <h2>C. ROSboard 설치 (토픽 웹 뷰어)</h2>
+
+  <div class="analogy purple">
+    <div class="analogy-icon">📺</div>
+    <div>
+      <div class="analogy-title">CCTV 관제실 모니터에 비유하면</div>
+      <p class="analogy-text">
+        rosbridge가 "통역사"라면, ROSboard는 <strong>CCTV 관제실의 모니터</strong>입니다.<br>
+        카메라 영상, IMU 그래프, 배터리 게이지를 <strong>웹 브라우저에서 바로</strong> 볼 수 있습니다.
+      </p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-badge purple">📌 C-1 · ROSboard 설치 (GitHub에서)</div>
+    <h4>🖥️ NUC (터미널 2)</h4>
+    <div class="code"><span class="cm"># ⚠️ ROSboard는 PyPI에 없습니다! GitHub에서 직접 설치해야 합니다.</span>
+<span class="cm"># (pip3 install rosboard 하면 "No matching distribution" 오류 발생)</span>
+
+pip3 install git+https://github.com/dheera/rosboard.git
+
+<span class="cm"># 설치 확인</span>
+pip3 show rosboard
+<span class="cm"># ✅ Name: rosboard, Version: 1.3.x 이 나오면 성공</span></div>
+    <div class="co co-warn">
+      <div class="co-i">⚠️</div>
+      <div class="co-t"><strong>사전 설정(pip.conf)을 안 했다면?</strong> 끝에 <code>--break-system-packages</code>를 붙여야 합니다</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-badge purple">📌 C-2 · ROSboard 실행</div>
+    <h4>새 터미널(터미널 3)을 열고 실행</h4>
+    <div class="code"><span class="cm"># ⚠️ ros2 run rosboard는 안 됩니다! (GitHub pip 설치는 ROS2 패키지로 등록 안 됨)</span>
+<span class="cm"># Python 모듈로 직접 실행:</span>
+
+python3 -m rosboard.rosboard --port <span class="wr">8888</span>
+
+<span class="cm"># ✅ 이런 메시지가 나오면 성공:</span>
+<span class="st">[INFO] ROSboard listening on :8888</span>
+
+<span class="cm"># 💡 "simplejpeg not found" 경고는 무시해도 됩니다.</span></div>
+  </div>
+
+  <div class="step">
+    <div class="step-badge purple">📌 C-3 · 브라우저에서 확인</div>
+    <div class="code"><span class="cm"># 브라우저에서 접속:</span>
+http://<span class="wr">10.10.1.20</span>:8888     <span class="cm"># 로봇망에서</span>
+http://<span class="wr">192.168.50.190</span>:8888  <span class="cm"># 인터넷망에서</span>
+http://localhost:8888        <span class="cm"># 같은 PC에서</span></div>
+  </div>
+
+  <div class="step">
+    <div class="step-badge purple">📌 C-4 · 테스트 토픽으로 확인</div>
+    <h4>새 터미널(터미널 4)에서 테스트 토픽 발행</h4>
+    <div class="code"><span class="cm"># 테스트 토픽 발행 (rosbridge 또는 ROSboard 확인용)</span>
+ros2 topic pub /test_battery sensor_msgs/msg/BatteryState \
+  "{voltage: 12.6, percentage: 0.85}" --rate 1
+
+<span class="cm"># ROSboard 웹에서 /test_battery 토픽이 보이면 성공! 🎉</span>
+<span class="cm"># 클릭하면 실시간 값이 표시됩니다.</span></div>
+  </div>
+</div>
+</section>
+
+<!-- ======= D. STEP 3: 등록 서버 ======= -->
+<section class="sec-alt">
+<div class="container">
+  <div class="step-num" style="background:var(--or)">D</div>
+  <h2>D. 등록 서버 실행 (FastAPI 대시보드)</h2>
+
+  <div class="analogy orange">
+    <div class="analogy-icon">🏨</div>
+    <div>
+      <div class="analogy-title">호텔 프론트 데스크에 비유하면</div>
+      <p class="analogy-text">
+        ROSboard가 "CCTV 모니터"라면, 등록 서버는 <strong>호텔 프론트 데스크</strong>입니다.<br>
+        로봇(손님)이 체크인하면 → 이름표를 달고 → CCTV(ROSboard)에 연결합니다.<br>
+        <strong>rosbridge가 없어도 시뮬레이션 모드로 동작</strong>하여 대시보드를 미리 체험할 수 있습니다.
+      </p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-badge orange">📌 D-1 · 의존성 설치</div>
+    <div class="code"><span class="cm"># 등록 서버에 필요한 Python 라이브러리 설치</span>
+pip3 install fastapi uvicorn roslibpy</div>
+  </div>
+
+  <div class="step">
+    <div class="step-badge orange">📌 D-2 · 파일 배치</div>
+    <div class="code"><span class="cm"># 작업 폴더 생성</span>
+mkdir -p ~/phase1
+cd ~/phase1
+
+<span class="cm"># 다운로드한 파일들을 이 위치에 배치:</span></div>
+    <div class="file-tree">
+<span class="dir">~/phase1/</span>
+├── <span class="file">phase1.html</span>             <span class="desc">← 대시보드 웹 페이지 (phase1 UI)</span>
+├── <span class="file">ros2_robot_register.py</span>   <span class="desc">← FastAPI 등록 서버 (메인 프로그램)</span>
+└── <span class="file">requirements.txt</span>         <span class="desc">← Python 의존성 목록</span>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-badge orange">📌 D-3 · 설정값 확인 (필요시 수정)</div>
+    <p><code>ros2_robot_register.py</code> 파일 상단의 설정값을 본인 환경에 맞게 확인합니다:</p>
+    <div class="code"><span class="cm"># ros2_robot_register.py 상단 설정값</span>
+ROSBRIDGE_HOST = "<span class="wr">localhost</span>"        <span class="cm"># ← rosbridge가 같은 NUC이면 localhost</span>
+ROSBRIDGE_PORT = <span class="wr">9090</span>               <span class="cm"># ← rosbridge 포트</span>
+DASHBOARD_PORT = <span class="wr">8080</span>               <span class="cm"># ← 대시보드 포트</span>
+ROSBOARD_URL = "<span class="wr">http://10.10.1.20:8888</span>"  <span class="cm"># ← ROSboard URL</span></div>
+  </div>
+
+  <div class="step">
+    <div class="step-badge orange">📌 D-4 · 등록 서버 실행</div>
+    <h4>새 터미널(터미널 5)에서 실행</h4>
+    <div class="code"><span class="cm"># 작업 폴더로 이동</span>
+cd ~/phase1
+
+<span class="cm"># 등록 서버 실행 (순수 Python 프로그램 — ros2 명령이 아닙니다!)</span>
+python3 ros2_robot_register.py
+
+<span class="cm"># ✅ 이렇게 나오면 성공:</span>
+<span class="st">╔══════════════════════════════════════════════════╗</span>
+<span class="st">║  🏭 Phase 1 — 로봇 등록 서버                     ║</span>
+<span class="st">║  📊 대시보드: http://0.0.0.0:8080              ║</span>
+<span class="st">╚══════════════════════════════════════════════════╝</span></div>
+    <div class="co co-tip">
+      <div class="co-i">💡</div>
+      <div class="co-t"><strong>rosbridge가 없어도 동작합니다!</strong> 등록 서버는 rosbridge 연결에 실패하면 자동으로 <strong>시뮬레이션 모드</strong>로 전환됩니다. 대시보드 UI를 미리 체험할 수 있습니다.</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-badge orange">📌 D-5 · 브라우저에서 대시보드 열기</div>
+    <div class="code"><span class="cm"># 브라우저에서:</span>
+http://<span class="wr">10.10.1.20</span>:8080     <span class="cm"># 로봇망에서</span>
+http://<span class="wr">192.168.50.190</span>:8080  <span class="cm"># 인터넷망에서</span>
+http://localhost:8080        <span class="cm"># 같은 PC에서</span></div>
+  </div>
+
+  <!-- REST API 명세 -->
+  <h3>📡 등록 서버 REST API</h3>
+  <table class="tbl">
+    <thead><tr><th>Method</th><th>경로</th><th>설명</th></tr></thead>
+    <tbody>
+      <tr><td><code>GET</code></td><td><code>/</code></td><td>Phase 1 대시보드 HTML</td></tr>
+      <tr><td><code>GET</code></td><td><code>/api/status</code></td><td>전체 시스템 상태</td></tr>
+      <tr><td><code>GET</code></td><td><code>/api/robots</code></td><td>등록된 로봇 목록</td></tr>
+      <tr><td><code>POST</code></td><td><code>/api/robots</code></td><td>새 로봇 등록</td></tr>
+      <tr><td><code>DELETE</code></td><td><code>/api/robots/{id}</code></td><td>로봇 등록 해제</td></tr>
+      <tr><td><code>GET</code></td><td><code>/api/logs</code></td><td>시스템 로그</td></tr>
+      <tr><td><code>WS</code></td><td><code>/ws</code></td><td>실시간 WebSocket 스트림</td></tr>
+    </tbody>
+  </table>
+</div>
+</section>
+
+<!-- ======= E. 통합 검증 ======= -->
+<section>
+<div class="container">
+  <div class="step-num" style="background:var(--pri)">E</div>
+  <h2>E. 통합 검증 — 모든 것이 연결되었는지 확인</h2>
+
+  <h3>🖥️ 현재 터미널 상태</h3>
+  <table class="tbl">
+    <thead><tr><th>터미널</th><th>실행 중인 프로그램</th><th>포트</th><th>역할</th></tr></thead>
+    <tbody>
+      <tr><td>터미널 1</td><td><code>ros2 launch rosbridge_server ...</code></td><td>9090</td><td>🔌 DDS ↔ WebSocket 변환</td></tr>
+      <tr><td>터미널 2</td><td>(확인용, 자유)</td><td>—</td><td>명령어 테스트</td></tr>
+      <tr><td>터미널 3</td><td><code>python3 -m rosboard.rosboard --port 8888</code></td><td>8888</td><td>📡 토픽 웹 뷰어</td></tr>
+      <tr><td>터미널 4</td><td><code>ros2 topic pub ...</code> (선택)</td><td>—</td><td>🧪 테스트 토픽</td></tr>
+      <tr><td>터미널 5</td><td><code>python3 ros2_robot_register.py</code></td><td>8080</td><td>🐍 등록 서버</td></tr>
+    </tbody>
+  </table>
+
+  <h3>🔌 전체 아키텍처 확인</h3>
+  <div class="arch">
+    <div class="arch-l green">
+      <div class="arch-lb">👁️ 브라우저 (어떤 PC에서든 접속)</div>
+      <div class="arch-bxs">
+        <div class="arch-bx">📊 대시보드 → :8080</div>
+        <div class="arch-bx">📡 ROSboard → :8888</div>
+      </div>
+    </div>
+    <div class="arch-arr">▲ HTTP / WebSocket</div>
+    <div class="arch-l teal">
+      <div class="arch-lb">💻 NUC (10.10.1.20 / 192.168.50.190)</div>
+      <div class="arch-bxs">
+        <div class="arch-bx">🔌 rosbridge :9090</div>
+        <div class="arch-bx">📡 ROSboard :8888</div>
+        <div class="arch-bx">🐍 등록서버 :8080</div>
+      </div>
+    </div>
+    <div class="arch-arr">▲ DDS (ROS2) / VPN (172.10.1.x)</div>
+    <div class="arch-l orange">
+      <div class="arch-lb">🤖 LeKiwi 로봇 (10.10.1.10 / 172.10.1.10)</div>
+      <div class="arch-bxs">
+        <div class="arch-bx">📷 camera</div>
+        <div class="arch-bx">🧭 imu</div>
+        <div class="arch-bx">🔋 battery</div>
+        <div class="arch-bx">🦿 joint_states</div>
+        <div class="arch-bx">🎮 cmd_vel</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 체크리스트 -->
+  <h3>✅ 최종 점검 체크리스트</h3>
+  <div class="checklist">
+    <h4 style="color:var(--warn);margin-bottom:.75rem">⚠️ 사전 설정</h4>
+    <div class="check-item"><input type="checkbox"><span><code>~/.bashrc</code>에 <code>source /opt/ros/jazzy/setup.bash</code> 추가됨</span></div>
+    <div class="check-item"><input type="checkbox"><span><code>~/.config/pip/pip.conf</code>에 <code>break-system-packages = true</code> 설정됨</span></div>
+    <div class="check-item"><input type="checkbox"><span><code>ping 10.10.1.10</code> → 로봇(Pi5) 응답 OK</span></div>
+
+    <h4 style="color:var(--blue);margin:1.25rem 0 .75rem">🔌 B. rosbridge</h4>
+    <div class="check-item"><input type="checkbox"><span><code>ros2 pkg list | grep rosbridge</code> → 패키지 3개 확인</span></div>
+    <div class="check-item"><input type="checkbox"><span>rosbridge 실행 → <code>ss -tlnp | grep 9090</code> → LISTEN</span></div>
+    <div class="check-item"><input type="checkbox"><span><code>curl -s http://localhost:9090</code> → "Upgrade" 메시지</span></div>
+
+    <h4 style="color:var(--pur);margin:1.25rem 0 .75rem">📡 C. ROSboard</h4>
+    <div class="check-item"><input type="checkbox"><span><code>pip3 show rosboard</code> → Version: 1.3.x</span></div>
+    <div class="check-item"><input type="checkbox"><span><code>python3 -m rosboard.rosboard --port 8888</code> → 실행 성공</span></div>
+    <div class="check-item"><input type="checkbox"><span>브라우저에서 <code>http://NUC_IP:8888</code> 접속 성공</span></div>
+
+    <h4 style="color:var(--or);margin:1.25rem 0 .75rem">🐍 D. 등록 서버</h4>
+    <div class="check-item"><input type="checkbox"><span><code>pip3 install fastapi uvicorn roslibpy</code> 완료</span></div>
+    <div class="check-item"><input type="checkbox"><span><code>python3 ros2_robot_register.py</code> → 포트 8080 실행</span></div>
+    <div class="check-item"><input type="checkbox"><span>브라우저에서 <code>http://NUC_IP:8080</code> 대시보드 접속 성공</span></div>
+    <div class="check-item"><input type="checkbox"><span>로봇 등록 → 토픽이 바로 보임 🎉</span></div>
+  </div>
+</div>
+</section>
+
+<!-- ======= 매일 실행 순서 ======= -->
+<section class="sec-alt">
+<div class="container">
+  <h2>🚀 매일 시작할 때 — 실행 순서 (복사해서 쓰세요!)</h2>
+
+  <div class="co co-warn">
+    <div class="co-i">⚠️</div>
+    <div class="co-t"><strong>반드시 이 순서!</strong> ① rosbridge → ② ROSboard → ③ 등록 서버. rosbridge가 먼저 있어야 등록 서버가 토픽을 구독할 수 있습니다.</div>
+  </div>
+
+  <div class="timeline">
+    <div class="tl-item">
+      <div class="tl-dot" style="background:var(--sec)">1</div>
+      <div class="tl-content">
+        <div class="tl-title">🌐 네트워크 확인</div>
+        <div class="code" style="margin:0">ping -c 1 10.10.1.10  <span class="cm"># 로봇 응답 확인</span></div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot" style="background:var(--blue)">2</div>
+      <div class="tl-content">
+        <div class="tl-title">🔌 [터미널 1] rosbridge 실행</div>
+        <div class="code" style="margin:0">ros2 launch rosbridge_server rosbridge_websocket_launch.xml</div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot" style="background:var(--pur)">3</div>
+      <div class="tl-content">
+        <div class="tl-title">📡 [터미널 3] ROSboard 실행</div>
+        <div class="code" style="margin:0">python3 -m rosboard.rosboard --port 8888</div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot" style="background:var(--or)">4</div>
+      <div class="tl-content">
+        <div class="tl-title">🐍 [터미널 5] 등록 서버 실행</div>
+        <div class="code" style="margin:0">cd ~/phase1
+python3 ros2_robot_register.py</div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot" style="background:var(--pri)">5</div>
+      <div class="tl-content">
+        <div class="tl-title">🌐 브라우저에서 확인</div>
+        <div class="code" style="margin:0"><span class="cm"># 대시보드</span>
+http://10.10.1.20:8080
+<span class="cm"># ROSboard</span>
+http://10.10.1.20:8888</div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ======= 트러블슈팅 ======= -->
+<section>
+<div class="container">
+  <h2>🔧 자주 나오는 문제와 해결법</h2>
+
+  <div class="co co-err" style="margin-bottom:1.25rem">
+    <div class="co-i">🚨</div>
+    <div class="co-t"><strong>localhost에서는 되는데 다른 IP로는 안 됨</strong><br>→ 방화벽이 포트를 차단. <code>sudo ufw allow 9090 && sudo ufw allow 8888 && sudo ufw allow 8080</code></div>
+  </div>
+
+  <div class="co co-err" style="margin-bottom:1.25rem">
+    <div class="co-i">🚨</div>
+    <div class="co-t"><strong>rosbridge "Address already in use"</strong><br>→ 기존 프로세스 종료 후 재실행: <code>pkill -f rosbridge</code></div>
+  </div>
+
+  <div class="co co-err" style="margin-bottom:1.25rem">
+    <div class="co-i">🚨</div>
+    <div class="co-t"><strong>ROSboard에서 토픽이 안 보임</strong><br>→ <code>ros2 topic list</code>로 확인. <code>/rosout</code>만 보이면 로봇이 아직 연결 안 된 것. DDS Discovery + FastDDS XML 확인</div>
+  </div>
+
+  <div class="co co-err" style="margin-bottom:1.25rem">
+    <div class="co-i">🚨</div>
+    <div class="co-t"><strong><code>ros2 run rosboard</code> → "Package not found"</strong><br>→ 정상! GitHub pip 설치는 ROS2 패키지로 등록 안 됨. <code>python3 -m rosboard.rosboard</code> 사용</div>
+  </div>
+
+  <div class="co co-err" style="margin-bottom:1.25rem">
+    <div class="co-i">🚨</div>
+    <div class="co-t"><strong>DDS Discovery 간헐적 실패 (토픽이 보였다 사라짐)</strong><br>→ 가장 흔한 원인: FastDDS 화이트리스트 미설정. <code>FASTDDS_DEFAULT_PROFILES_FILE</code> 환경변수 확인. 상세 내용은 <code>nuc-dual-network-dds-troubleshooting.md</code> 참고</div>
+  </div>
+
+  <div class="co co-err">
+    <div class="co-i">🚨</div>
+    <div class="co-t"><strong><code>ModuleNotFoundError: No module named 'fastapi'</code></strong><br>→ <code>pip3 install fastapi uvicorn roslibpy</code> 실행. 사전 설정(pip.conf) 확인</div>
+  </div>
+</div>
+</section>
+
+<!-- ======= Phase 1이 끝나면 ======= -->
+<section class="sec-alt">
+<div class="container">
+  <h2>🤔 Phase 1이 끝나면 느끼는 불편함</h2>
+
+  <div class="co co-err" style="font-size:1rem">
+    <div class="co-i" style="font-size:1.5rem">🚧</div>
+    <div class="co-t"><strong style="font-size:1.1rem">"어제 배터리가 얼마였지?"</strong><br><br>
+    ROSboard는 <strong>지금 이 순간</strong>의 데이터만 보여줍니다.<br>
+    5분 전 데이터도, 어제 데이터도 볼 수 없습니다.<br><br>
+    과거 데이터를 저장하고 추이를 보려면…<br>
+    → <strong>Phase 2: InfluxDB + Exporter</strong>가 필요해집니다! 📀</div>
+  </div>
+</div>
+</section>
+
+<!-- ======= 참조 문서 ======= -->
+<section>
+<div class="container">
+  <h2>📚 관련 문서</h2>
+  <table class="tbl">
+    <thead><tr><th>파일</th><th>내용</th><th>언제 참고?</th></tr></thead>
+    <tbody>
+      <tr><td><code>lekiwi-network-rtsp-edu.html</code></td><td>네트워크 + VPN + RTSP 6단계 셋업</td><td>A단계 네트워크 문제 시</td></tr>
+      <tr><td><code>nuc-dual-network-dds-troubleshooting.md</code></td><td>NUC 듀얼 네트워크 DDS 트러블슈팅</td><td>DDS Discovery 실패 시</td></tr>
+      <tr><td><code>edu-robot-network-setup.html</code></td><td>ASUS 라우터 독립망 구성</td><td>교육 현장 네트워크 구성 시</td></tr>
+      <tr><td><code>phase1.html</code></td><td>Phase 1 대시보드 UI (시뮬레이션)</td><td>등록 서버와 함께 배포</td></tr>
+      <tr><td><code>ros2_robot_register.py</code></td><td>FastAPI 등록 서버 소스</td><td>NUC에 배포할 메인 프로그램</td></tr>
+    </tbody>
+  </table>
+</div>
+</section>
+
+<footer class="footer">
+<div class="container">
+  <p>🤖 ROS2 로봇 모니터링 시스템 · Phase 1 구현 가이드 (2026-02-26)</p>
+  <p style="margin-top:.4rem;font-size:.78rem">Ubuntu 24.04 + ROS2 Jazzy | rosbridge(9090) + ROSboard(8888) + FastAPI(8080) | 10.10.1.x 독립망</p>
+</div>
+</footer>
+
+<script>
+// 탭 전환
+function switchTab(wrap, id) {
+  const w = wrap.closest('.tab-wrap');
+  w.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('on'));
+  w.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('on'));
+  wrap.classList.add('on');
+  document.getElementById(id).classList.add('on');
+}
+</script>
+</body>
+</html>

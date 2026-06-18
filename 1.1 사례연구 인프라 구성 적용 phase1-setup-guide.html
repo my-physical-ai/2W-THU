@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phase 1 — 완전 셋업 가이드 (Pi5 + NUC + RTSP)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f1923;--card:#162231;--card2:#1b2a3b;--bd:#243447;
+  --t1:#e8ecf2;--t2:#94a3b8;--t3:#5e7088;--t4:#3a4e66;
+  --g:#22c55e;--b:#3b82f6;--cy:#06b6d4;--am:#f59e0b;--rd:#ef4444;--pu:#a78bfa;--or:#fb923c;
+  --R:12px;--Rs:8px
+}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;line-height:1.8}
+code,pre,.mono{font-family:'JetBrains Mono',monospace}
+a{color:var(--cy);text-decoration:none}a:hover{text-decoration:underline}
+
+.container{max-width:880px;margin:0 auto;padding:0 1.25rem}
+
+/* 히어로 */
+.hero{background:linear-gradient(135deg,#0a1628 0%,#162a42 50%,#1a3350 100%);border-bottom:2px solid var(--bd);padding:2.5rem 1.25rem 2rem}
+.hero h1{font-size:2rem;font-weight:900;letter-spacing:-.02em;margin-bottom:.5rem}
+.hero p{color:var(--t2);font-size:1rem;max-width:650px}
+.hero-tags{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:1rem}
+.htag{font-family:'JetBrains Mono',monospace;font-size:.65rem;font-weight:700;padding:3px 8px;border-radius:4px;border:1px solid}
+.htag-g{color:var(--g);border-color:rgba(34,197,94,.3);background:rgba(34,197,94,.06)}
+.htag-b{color:var(--b);border-color:rgba(59,130,246,.3);background:rgba(59,130,246,.06)}
+.htag-c{color:var(--cy);border-color:rgba(6,182,212,.3);background:rgba(6,182,212,.06)}
+.htag-a{color:var(--am);border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.06)}
+.htag-p{color:var(--pu);border-color:rgba(167,139,250,.3);background:rgba(167,139,250,.06)}
+
+/* 섹션 */
+.sec{padding:2rem 0}
+.sec-title{font-size:1.4rem;font-weight:900;margin-bottom:1.2rem;padding-bottom:.5rem;border-bottom:2px solid var(--bd)}
+.step{background:var(--card);border:1px solid var(--bd);border-radius:var(--R);margin-bottom:1rem;overflow:hidden}
+.step-h{padding:.6rem 1rem;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:.6rem;font-weight:700}
+.step-num{background:var(--b);color:#fff;font-family:'JetBrains Mono',monospace;font-size:.7rem;font-weight:700;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-b{padding:1rem}
+.step .target{display:inline-block;font-size:.6rem;font-weight:700;padding:2px 6px;border-radius:3px;margin-left:.5rem}
+.target-pi{background:rgba(34,197,94,.1);color:var(--g);border:1px solid rgba(34,197,94,.2)}
+.target-nuc{background:rgba(59,130,246,.1);color:var(--b);border:1px solid rgba(59,130,246,.2)}
+.target-both{background:rgba(167,139,250,.1);color:var(--pu);border:1px solid rgba(167,139,250,.2)}
+
+/* 코드 블록 */
+pre.cmd{background:#0a0e14;border:1px solid var(--bd);border-radius:var(--Rs);padding:.75rem 1rem;overflow-x:auto;font-size:.8rem;line-height:1.6;margin:.5rem 0}
+pre.cmd .cmt{color:#546e7a}
+pre.cmd .hl{color:var(--am);font-weight:700}
+pre.cmd .ok{color:var(--g)}
+pre.cmd .url{color:var(--cy)}
+
+/* 경고/팁 */
+.tip{display:flex;gap:.6rem;padding:.75rem 1rem;border-radius:var(--Rs);margin:.5rem 0;font-size:.85rem;line-height:1.6}
+.tip-i{font-size:1.2rem;flex-shrink:0}.tip-w{background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.15);color:var(--am)}
+.tip-g{background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.15);color:var(--g)}
+.tip-r{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);color:var(--rd)}
+.tip-b{background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);color:var(--b)}
+
+/* 아키텍처 다이어그램 */
+.arch{background:var(--card);border:1px solid var(--bd);border-radius:var(--R);padding:1.25rem;margin:1rem 0;font-family:'JetBrains Mono',monospace;font-size:.75rem;line-height:1.8;white-space:pre;overflow-x:auto;color:var(--t2)}
+.arch .hl{color:var(--g);font-weight:700}.arch .hl2{color:var(--cy);font-weight:700}.arch .hl3{color:var(--am);font-weight:700}.arch .hl4{color:var(--pu);font-weight:700}
+
+/* 테이블 */
+.tbl{width:100%;border-collapse:collapse;font-size:.8rem;margin:.75rem 0}
+.tbl th{text-align:left;padding:.4rem .6rem;font-size:.7rem;color:var(--t3);font-weight:700;border-bottom:2px solid var(--bd)}
+.tbl td{padding:.4rem .6rem;border-bottom:1px solid rgba(255,255,255,.03)}
+.tbl tr:hover td{background:rgba(255,255,255,.015)}
+
+/* 진행 상태 */
+.progress{display:flex;gap:.3rem;margin:1rem 0;flex-wrap:wrap}
+.prog-item{flex:1;min-width:100px;text-align:center;padding:.5rem .3rem;border-radius:var(--Rs);border:1px solid var(--bd);font-size:.7rem}
+.prog-item.done{border-color:rgba(34,197,94,.3);background:rgba(34,197,94,.06)}
+.prog-item .prog-n{font-weight:900;font-size:.9rem;display:block}
+.prog-item .prog-l{color:var(--t3)}
+
+/* 체크리스트 */
+.chk{padding:.3rem 0;font-size:.85rem;display:flex;gap:.4rem;align-items:flex-start}
+.chk::before{content:'☐';color:var(--t3);font-size:.9rem;flex-shrink:0}
+.chk.done::before{content:'☑';color:var(--g)}
+
+/* TOC */
+.toc{background:var(--card);border:1px solid var(--bd);border-radius:var(--R);padding:1rem;margin:1.5rem 0}
+.toc-title{font-weight:900;font-size:.9rem;margin-bottom:.5rem}
+.toc a{display:block;padding:.2rem 0;font-size:.85rem;color:var(--t2)}
+.toc a:hover{color:var(--cy)}
+.toc .toc-sub{padding-left:1.2rem;font-size:.8rem}
+</style>
+</head>
+<body>
+
+<!-- ===== 히어로 ===== -->
+<div class="hero">
+<div class="container">
+  <h1>🏭 Phase 1 — 완전 셋업 가이드</h1>
+  <p>Pi5(GStreamer RTSP) → NUC(MediaMTX WebRTC + 대시보드) 전체 연결을 처음부터 끝까지 단계별로 설명합니다.</p>
+  <div class="hero-tags">
+    <span class="htag htag-g">🍓 Pi5 Ubuntu 24.04</span>
+    <span class="htag htag-b">🖥️ NUC Ubuntu 24.04</span>
+    <span class="htag htag-c">📹 GStreamer RTSP + MediaMTX</span>
+    <span class="htag htag-a">🔌 ROS2 Jazzy</span>
+    <span class="htag htag-p">📊 Phase 1 대시보드</span>
+  </div>
+</div>
+</div>
+
+<div class="container">
+
+<!-- ===== 목차 ===== -->
+<div class="toc">
+  <div class="toc-title">📖 목차</div>
+  <a href="#overview">0. 전체 구성도 & 실행 순서</a>
+  <a href="#pi-base">1. Pi5 — 기본 환경 설정</a>
+  <a class="toc-sub" href="#pi-ros2">1-1. ROS2 Jazzy 확인</a>
+  <a class="toc-sub" href="#pi-fastdds">1-2. FastDDS 인터페이스 화이트리스트</a>
+  <a class="toc-sub" href="#pi-bridge">1-3. lerobot_bridge 배포 & 실행</a>
+  <a href="#pi-rtsp">2. Pi5 — 카메라 서버 (GStreamer RTSP)</a>
+  <a class="toc-sub" href="#pi-gst">2-1. GStreamer 의존성 설치</a>
+  <a class="toc-sub" href="#pi-cam-deploy">2-2. camera_server_v2.py 배포</a>
+  <a class="toc-sub" href="#pi-cam-run">2-3. 카메라 서버 실행</a>
+  <a href="#nuc-base">3. NUC — 기본 환경 설정</a>
+  <a class="toc-sub" href="#nuc-fastdds">3-1. FastDDS 인터페이스 화이트리스트</a>
+  <a class="toc-sub" href="#nuc-rosbridge">3-2. rosbridge 설치 & 실행</a>
+  <a href="#nuc-mediamtx">4. NUC — MediaMTX 프록시 (WebRTC/HLS)</a>
+  <a class="toc-sub" href="#nuc-mtx-install">4-1. MediaMTX 설치</a>
+  <a class="toc-sub" href="#nuc-mtx-config">4-2. 프록시 설정</a>
+  <a class="toc-sub" href="#nuc-mtx-run">4-3. MediaMTX 실행</a>
+  <a href="#nuc-phase1">5. NUC — Phase 1 대시보드 & 테스트 콘솔</a>
+  <a class="toc-sub" href="#nuc-deploy">5-1. 파일 배포 & 의존성 (websockets, sqlite3)</a>
+  <a class="toc-sub" href="#nuc-run">5-2. Phase 1 서버 실행</a>
+  <a href="#connect">6. 전체 연결 & 검증</a>
+  <a href="#trouble">7. 트러블슈팅</a>
+</div>
+
+
+<!-- ===== 0. 전체 구성도 ===== -->
+<div class="sec" id="overview">
+<div class="sec-title">0. 전체 구성도 & 실행 순서</div>
+
+<div class="arch">
+<span class="hl">┌─ 🍓 Pi5 (로봇 본체) ─── IP: 10.10.1.10 ────────────────────┐</span>
+│                                                              │
+│  RealSense RGB  → OpenCV → <span class="hl3">GStreamer RTSP :8554/rgb</span>         │
+│  RealSense Dep  → OpenCV → <span class="hl3">GStreamer RTSP :8554/depth</span>       │
+│  USB 카메라     → OpenCV → <span class="hl3">GStreamer RTSP :8554/usb</span>         │
+│                          → ROS2 CompressedImage 토픽 (병행) │
+│                                                              │
+│  <span class="hl">인코딩은 Pi5에서 1회만 (H.264, ultrafast)</span>                  │
+│                                                              │
+│  <span class="hl2">lerobot_bridge.py</span> — Feetech 모터 읽기/쓰기 + ROS2 발행    │
+│     발행: /lekiwi/joint_states, /odom, /battery              │
+│     구독: /lekiwi/cmd_vel → 역기구학 → 모터 속도 명령       │
+│       └──→ DDS 멀티캐스트 (FastDDS, 10.10.1.x 전용)         │
+<span class="hl">└──────────────────────────────────────────────────────────────┘</span>
+          │ Wi-Fi (ASUS 독립망 10.10.1.0/24)
+          ▼
+<span class="hl2">┌─ 🖥️ NUC (Control PC) ── IP: 10.10.1.20 ───────────────────┐</span>
+│                                                              │
+│  <span class="hl3">MediaMTX (프록시)</span> ← Pi5 RTSP를 받아서 자동 변환           │
+│     ├→ <span class="hl2">WebRTC :8889</span>  ← 브라우저에서 바로 시청 (지연 1초↓)  │
+│     ├→ HLS    :8888  ← 호환성 최대 (5~10초 지연)            │
+│     └→ RTSP   :8564  ← VLC 등 전용 플레이어                 │
+│                                                              │
+│  <span class="hl2">rosbridge :9090</span> ← DDS ↔ WebSocket 변환 (브라우저용)       │
+│  <span class="hl4">Phase 1 서버 :8080</span>  ←── 대시보드 + 테스트 콘솔           │
+│                                                              │
+│  브라우저에서 카메라 확인:                                    │
+│    http://<span class="hl3">10.10.1.20</span>:8889/rs_rgb     ← WebRTC (최소 지연)  │
+│    http://<span class="hl3">10.10.1.20</span>:8889/cam_usb    ← USB 카메라          │
+<span class="hl2">└──────────────────────────────────────────────────────────────┘</span>
+
+<span class="hl">핵심: Pi5는 인코딩+모터만, NUC가 프로토콜 변환+브릿지+대시보드</span>
+</div>
+
+<div class="progress">
+  <div class="prog-item"><span class="prog-n">①</span><span class="prog-l">Pi5 기본 설정</span></div>
+  <div class="prog-item"><span class="prog-n">②</span><span class="prog-l">Pi5 카메라 서버</span></div>
+  <div class="prog-item"><span class="prog-n">③</span><span class="prog-l">NUC 기본 설정</span></div>
+  <div class="prog-item"><span class="prog-n">④</span><span class="prog-l">NUC MediaMTX</span></div>
+  <div class="prog-item"><span class="prog-n">⑤</span><span class="prog-l">NUC 대시보드</span></div>
+  <div class="prog-item"><span class="prog-n">⑥</span><span class="prog-l">전체 검증</span></div>
+</div>
+
+<div class="tip tip-w"><span class="tip-i">⚠️</span><div><strong>실행 순서가 중요합니다!</strong><br>Pi5 카메라 서버 → Pi5 lerobot_bridge → NUC MediaMTX → NUC rosbridge → NUC 대시보드 서버 순서로 실행해야 합니다.</div></div>
+</div>
+
+<!-- ===== 1. Pi5 기본 환경 ===== -->
+<div class="sec" id="pi-base">
+<div class="sec-title">1. Pi5 — 기본 환경 설정</div>
+
+<!-- 1-1 ROS2 확인 -->
+<div class="step" id="pi-ros2">
+<div class="step-h"><span class="step-num">1</span>ROS2 Jazzy 설치 확인<span class="target target-pi">🍓 Pi5</span></div>
+<div class="step-b">
+<p>Pi5에 SSH로 접속하여 ROS2 Jazzy가 정상 설치되었는지 확인합니다.</p>
+
+<pre class="cmd"><span class="cmt"># Pi5에 SSH 접속</span>
+ssh <span class="hl">zeta</span>@10.10.1.10        <span class="cmt"># ← 본인 Pi5 IP로 변경</span>
+
+<span class="cmt"># ROS2 Jazzy 환경 로드</span>
+source /opt/ros/jazzy/setup.bash
+
+<span class="cmt"># ROS2 설치 확인</span>
+ros2 --version
+<span class="cmt"># → ros2 : jazzy (확인)</span>
+
+<span class="cmt"># 자동 로드 설정 (최초 1회)</span>
+echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc</pre>
+
+<div class="tip tip-w"><span class="tip-i">⚠️</span><div><strong>noble-updates 저장소 확인</strong> — ROS2 설치가 안 되면 저장소부터 확인하세요:<br>
+<code>cat /etc/apt/sources.list.d/ubuntu.sources | grep Suites</code><br>
+<code>noble noble-updates noble-backports</code>가 모두 있어야 합니다.</div></div>
+</div>
+</div>
+
+<!-- 1-2 FastDDS -->
+<div class="step" id="pi-fastdds">
+<div class="step-h"><span class="step-num">2</span>FastDDS 인터페이스 화이트리스트<span class="target target-pi">🍓 Pi5</span></div>
+<div class="step-b">
+<p>Pi5에는 <strong>네트워크 인터페이스가 2개</strong> 있습니다. DDS 멀티캐스트가 양쪽으로 나가면 패킷 충돌이 발생하므로, <strong>로봇망(10.10.1.x)만 사용</strong>하도록 제한합니다.</p>
+
+<div class="tip tip-b"><span class="tip-i">💡</span><div><strong>왜 10.10.1.x만 지정하나요?</strong><br><br>
+Pi5와 NUC 모두 IP가 2개입니다:<br><br>
+<table class="tbl" style="margin:.3rem 0">
+<tr><th>장치</th><th>일반망 (인터넷)</th><th>로봇망 (ASUS 독립)</th><th>화이트리스트</th></tr>
+<tr><td>🍓 Pi5</td><td><code>192.168.50.110</code> (wlan0)</td><td><code>10.10.1.10</code> (wlan1)</td><td><strong>10.10.1.10만 ✅</strong></td></tr>
+<tr><td>🖥️ NUC</td><td><code>192.168.50.190</code> (wlan0)</td><td><code>10.10.1.20</code> (eth0)</td><td><strong>10.10.1.20만 ✅</strong></td></tr>
+</table><br>
+화이트리스트 없이 DDS를 실행하면 <strong>양쪽 인터페이스 모두에서 멀티캐스트</strong>가 나갑니다:<br>
+→ ❌ 일반망(192.168)에 로봇 제어 데이터 노출 (보안 위험)<br>
+→ ❌ 같은 일반망의 다른 ROS2 장비와 토픽 충돌<br>
+→ ❌ Discovery 패킷이 2배 → 네트워크 지연 증가<br><br>
+<strong>로봇망(10.10.1.x)만 지정</strong> → Pi5↔NUC 전용 경로에서만 DDS 통신, 안전하고 빠름!</div></div>
+
+<pre class="cmd"><span class="cmt"># Pi5의 네트워크 인터페이스 확인 (2개가 보여야 함)</span>
+ip -4 addr show | grep inet
+<span class="cmt"># → inet 192.168.50.110/24  ← 일반망 (인터넷용)</span>
+<span class="cmt"># → inet 10.10.1.10/24     ← 로봇망 (ASUS) ★ 이것만 사용!</span>
+
+<span class="cmt"># FastDDS 화이트리스트 파일 생성</span>
+cat > ~/fastdds_wifi.xml << 'EOF'
+<?xml version="1.0" encoding="UTF-8" ?>
+<dds xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles">
+  <profiles>
+    <transport_descriptors>
+      <transport_descriptor>
+        <transport_id>wifi_udp</transport_id>
+        <type>UDPv4</type>
+        <interfaceWhiteList>
+          <address><span class="hl">10.10.1.10</span></address>  &lt;!-- ★ 로봇망 IP만! (192.168.x 제외) --&gt;
+        </interfaceWhiteList>
+      </transport_descriptor>
+    </transport_descriptors>
+    <participant profile_name="default_profile" is_default_profile="true">
+      <rtps>
+        <userTransports><transport_id>wifi_udp</transport_id></userTransports>
+        <useBuiltinTransports>false</useBuiltinTransports>
+      </rtps>
+    </participant>
+  </profiles>
+</dds>
+EOF
+
+<span class="cmt"># 환경변수 설정 (bashrc에 추가)</span>
+echo 'export FASTDDS_DEFAULT_PROFILES_FILE=~/fastdds_wifi.xml' >> ~/.bashrc
+source ~/.bashrc</pre>
+
+<div class="tip tip-w"><span class="tip-i">⚠️</span><div><strong>IP를 본인 환경에 맞게 변경!</strong> <code>ip -4 addr</code>에서 10.10.1.x 대역 IP를 확인 후 xml에 입력하세요.</div></div>
+</div>
+</div>
+
+<!-- 1-3 lerobot_bridge -->
+<div class="step" id="pi-bridge">
+<div class="step-h"><span class="step-num">3</span>lerobot_bridge.py 배포 & 실행<span class="target target-pi">🍓 Pi5</span></div>
+<div class="step-b">
+<p><code>lerobot_bridge.py</code>는 Feetech 모터를 읽고/쓰며 ROS2 토픽을 발행하는 브릿지 노드입니다. Pi5에서 실행하면 NUC가 DDS로 토픽을 수신합니다.</p>
+
+<pre class="cmd"><span class="cmt"># 로컬 PC → Pi5로 파일 전송</span>
+scp lerobot_bridge.py <span class="hl">zeta</span>@10.10.1.10:~/
+
+<span class="cmt"># Pi5에서 실행 (터미널 2)</span>
+source /opt/ros/jazzy/setup.bash
+python3 ~/lerobot_bridge.py</pre>
+
+<p style="margin:.5rem 0">정상 실행 시:</p>
+<pre class="cmd"><span class="ok">🌉 LeRobot Bridge started! (🔌 실제 모터)</span>
+<span class="ok">   모터: /dev/ttyACM0 @ 1000000, IDs=[6, 8, 9]</span>
+<span class="ok">   발행: joint=50Hz, odom=10Hz, battery=1Hz</span>
+<span class="ok">   구독: /lekiwi/cmd_vel → 역기구학 → 모터 속도 쓰기</span></pre>
+
+<p style="margin:.5rem 0"><strong>발행 토픽 (Pi5 → DDS → NUC):</strong></p>
+<table class="tbl">
+<tr><th>토픽</th><th>주기</th><th>내용</th></tr>
+<tr><td><code>/lekiwi/joint_states</code></td><td>50Hz</td><td>모터 위치/속도/토크</td></tr>
+<tr><td><code>/lekiwi/odom</code></td><td>10Hz</td><td>로봇 위치/속도 (엔코더 적분)</td></tr>
+<tr><td><code>/lekiwi/battery</code></td><td>1Hz</td><td>배터리 전압/잔량</td></tr>
+</table>
+
+<div class="tip tip-b"><span class="tip-i">💡</span><div><strong>rosbridge는 Pi5에 없습니다!</strong> rosbridge(WebSocket 변환)는 NUC에서 실행합니다. Pi5는 lerobot_bridge(DDS 토픽 발행)만 담당합니다.</div></div>
+</div>
+</div>
+</div>
+
+
+<!-- ===== 2. Pi5 카메라 서버 ===== -->
+<div class="sec" id="pi-rtsp">
+<div class="sec-title">2. Pi5 — 카메라 서버 (GStreamer RTSP)</div>
+
+<p style="margin-bottom:1rem"><code>camera_server_v2.py</code>가 RealSense + USB 카메라를 GStreamer RTSP로 내보냅니다. <strong>Pi5에서는 인코딩만</strong> 담당하고, WebRTC/HLS 변환은 NUC의 MediaMTX가 처리합니다.</p>
+
+<!-- 2-1 GStreamer 설치 -->
+<div class="step" id="pi-gst">
+<div class="step-h"><span class="step-num">4</span>GStreamer 의존성 설치<span class="target target-pi">🍓 Pi5</span></div>
+<div class="step-b">
+
+<pre class="cmd"><span class="cmt"># Pi5에 SSH 접속</span>
+ssh <span class="hl">zeta</span>@10.10.1.10
+
+<span class="cmt"># GStreamer RTSP 서버 의존성</span>
+sudo apt install -y \
+  gstreamer1.0-tools gstreamer1.0-plugins-base \
+  gstreamer1.0-plugins-good gstreamer1.0-plugins-bad \
+  gstreamer1.0-plugins-ugly gstreamer1.0-rtsp \
+  libgstrtspserver-1.0-dev gir1.2-gstrtspserver-1.0 \
+  python3-gst-1.0 v4l-utils
+
+<span class="cmt"># 설치 확인</span>
+python3 -c "import gi; gi.require_version('GstRtspServer','1.0'); print('GStreamer RTSP OK')"
+python3 -c "import cv2; print('OpenCV', cv2.__version__)"
+python3 -c "import pyrealsense2; print('pyrealsense2 OK')"</pre>
+</div>
+</div>
+
+<!-- 2-2 배포 -->
+<div class="step" id="pi-cam-deploy">
+<div class="step-h"><span class="step-num">5</span>camera_server_v2.py 배포<span class="target target-pi">🍓 Pi5</span></div>
+<div class="step-b">
+
+<pre class="cmd"><span class="cmt"># 로컬 PC에서 Pi5로 파일 전송</span>
+scp camera_server_v2.py <span class="hl">zeta</span>@10.10.1.10:~/</pre>
+
+<p style="margin:.5rem 0"><strong>IP 수정 확인</strong> (필요 시):</p>
+<pre class="cmd"><span class="cmt"># camera_server_v2.py 상단 설정:</span>
+RTSP_BIND_IP = "0.0.0.0"          <span class="cmt"># ← 모든 인터페이스 (변경 불필요)</span>
+RTSP_PORT = "8554"                 <span class="cmt"># ← RTSP 포트 (변경 불필요)</span></pre>
+
+<div class="tip tip-g"><span class="tip-i">✅</span><div><strong>0.0.0.0</strong>으로 바인딩 — NUC에서 10.10.1.10:8554로 접근 가능합니다.</div></div>
+</div>
+</div>
+
+<!-- 2-3 실행 -->
+<div class="step" id="pi-cam-run">
+<div class="step-h"><span class="step-num">6</span>카메라 서버 실행<span class="target target-pi">🍓 Pi5</span></div>
+<div class="step-b">
+
+<pre class="cmd"><span class="cmt"># ROS2 환경 로드 후 실행</span>
+source /opt/ros/jazzy/setup.bash
+python3 ~/camera_server_v2.py</pre>
+
+<p style="margin:.5rem 0">정상 실행 시:</p>
+<pre class="cmd"><span class="ok">📷 RealSense 시작: RGB(640x480@15fps) + Depth(640x480@15fps)</span>
+<span class="ok">📷 USB 카메라 시작: /dev/video4 (640x480@15fps)</span>
+<span class="ok">📡 USB 카메라 ROS2 발행 시작</span>
+
+============================================================
+🚀 통합 카메라 서버 v2 시작!
+============================================================
+  📹 GStreamer RTSP (0.0.0.0:8554)
+     RGB:   rtsp://&lt;Pi5_IP&gt;:8554/rgb
+     Depth: rtsp://&lt;Pi5_IP&gt;:8554/depth
+     USB:   rtsp://&lt;Pi5_IP&gt;:8554/usb
+  📷 USB 카메라 ROS2: /lekiwi/camera/image/compressed
+============================================================</pre>
+
+<p style="margin:.5rem 0"><strong>NUC에서 RTSP 확인 (VLC 또는 ffplay):</strong></p>
+<pre class="cmd"><span class="cmt"># NUC에서 Pi5 RTSP 직접 확인</span>
+ffplay rtsp://10.10.1.10:8554/rgb
+ffplay rtsp://10.10.1.10:8554/usb</pre>
+
+<div class="tip tip-b"><span class="tip-i">💡</span><div><strong>이 시점에서 Pi5는 완료!</strong> Pi5에서 MediaMTX를 실행하지 않습니다. WebRTC/HLS는 NUC에서 처리합니다.</div></div>
+</div>
+</div>
+</div>
+
+
+<!-- ===== 3. NUC 기본 환경 ===== -->
+<div class="sec" id="nuc-base">
+<div class="sec-title">3. NUC — 기본 환경 설정</div>
+
+<!-- 3-1 FastDDS -->
+<div class="step" id="nuc-fastdds">
+<div class="step-h"><span class="step-num">7</span>FastDDS 인터페이스 화이트리스트<span class="target target-nuc">🖥️ NUC</span></div>
+<div class="step-b">
+<p>NUC도 Pi5와 마찬가지로 <strong>IP가 2개</strong>(일반망 + 로봇망)입니다. 로봇망(10.10.1.x)만 사용하도록 설정합니다.</p>
+
+<pre class="cmd"><span class="cmt"># NUC에 SSH 접속</span>
+ssh <span class="hl">bigman</span>@10.10.1.20
+
+<span class="cmt"># NUC 네트워크 인터페이스 확인 (2개)</span>
+ip -4 addr show | grep inet
+<span class="cmt"># → inet 192.168.50.190/24  ← 일반망 (인터넷용)</span>
+<span class="cmt"># → inet 10.10.1.20/24     ← 로봇망 ★ 이것만 사용!</span>
+
+<span class="cmt"># FastDDS 화이트리스트 생성 (Pi5와 같은 원리, IP만 다름)</span>
+cat > ~/fastdds_wifi.xml << 'EOF'
+&lt;?xml version="1.0" encoding="UTF-8" ?&gt;
+&lt;dds xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles"&gt;
+  &lt;profiles&gt;
+    &lt;transport_descriptors&gt;
+      &lt;transport_descriptor&gt;
+        &lt;transport_id&gt;wifi_udp&lt;/transport_id&gt;
+        &lt;type&gt;UDPv4&lt;/type&gt;
+        &lt;interfaceWhiteList&gt;
+          &lt;address&gt;<span class="hl">10.10.1.20</span>&lt;/address&gt;  &lt;!-- ★ NUC 로봇망 IP만! --&gt;
+        &lt;/interfaceWhiteList&gt;
+      &lt;/transport_descriptor&gt;
+    &lt;/transport_descriptors&gt;
+    &lt;participant profile_name="default_profile" is_default_profile="true"&gt;
+      &lt;rtps&gt;
+        &lt;userTransports&gt;&lt;transport_id&gt;wifi_udp&lt;/transport_id&gt;&lt;/userTransports&gt;
+        &lt;useBuiltinTransports&gt;false&lt;/useBuiltinTransports&gt;
+      &lt;/rtps&gt;
+    &lt;/participant&gt;
+  &lt;/profiles&gt;
+&lt;/dds&gt;
+EOF
+
+echo 'export FASTDDS_DEFAULT_PROFILES_FILE=~/fastdds_wifi.xml' >> ~/.bashrc
+source ~/.bashrc</pre>
+
+<div class="tip tip-g"><span class="tip-i">✅</span><div><strong>Pi5(10.10.1.10)와 NUC(10.10.1.20) 모두 같은 10.10.1.x 대역에 화이트리스트</strong><br>→ 이 대역에서만 DDS Discovery가 동작 → Pi5의 토픽을 NUC가 자동 발견합니다.</div></div>
+</div>
+</div>
+
+<!-- 3-2 rosbridge (NUC에서 실행) -->
+<div class="step" id="nuc-rosbridge">
+<div class="step-h"><span class="step-num">8</span>rosbridge 설치 & 실행<span class="target target-nuc">🖥️ NUC</span></div>
+<div class="step-b">
+<p>rosbridge는 ROS2 DDS 토픽을 WebSocket으로 변환합니다. Pi5의 lerobot_bridge가 발행한 DDS 토픽을 NUC에서 수신하고, 웹 브라우저(대시보드)가 WebSocket으로 접근할 수 있게 합니다.</p>
+
+<pre class="cmd"><span class="cmt"># rosbridge 설치</span>
+sudo apt install ros-jazzy-rosbridge-server -y
+
+<span class="cmt"># 실행 (NUC 터미널 1)</span>
+source /opt/ros/jazzy/setup.bash
+ros2 launch rosbridge_server rosbridge_websocket_launch.xml
+
+<span class="cmt"># 정상 실행 확인</span>
+<span class="cmt"># → "Rosbridge WebSocket server started on port 9090"</span></pre>
+
+<div class="tip tip-g"><span class="tip-i">✅</span><div><strong>확인:</strong> <code>ros2 topic list</code>에서 Pi5 토픽이 보이면 DDS 연결 성공!<br>
+<code>/lekiwi/joint_states</code>, <code>/lekiwi/odom</code>, <code>/lekiwi/battery</code>가 보여야 합니다.</div></div>
+
+<div class="tip tip-b"><span class="tip-i">💡</span><div><strong>데이터 흐름:</strong><br>
+Pi5 <code>lerobot_bridge.py</code> → DDS(Wi-Fi) → NUC <code>rosbridge</code> → WebSocket(:9090) → 브라우저(대시보드)</div></div>
+</div>
+</div>
+</div>
+
+<!-- ===== 4. NUC MediaMTX 프록시 ===== -->
+<div class="sec" id="nuc-mediamtx">
+<div class="sec-title">4. NUC — MediaMTX 프록시 (WebRTC/HLS)</div>
+
+<p style="margin-bottom:1rem">Pi5의 GStreamer RTSP 스트림을 받아서 <strong>WebRTC/HLS로 자동 변환</strong>합니다. NUC는 CPU 여유가 있으므로 프로토콜 변환 부담이 없습니다.</p>
+
+<div class="arch">
+<span class="hl">Pi5 → NUC 데이터 흐름:</span>
+
+  Pi5 GStreamer RTSP(:8554)
+    /rgb   ──→ NUC MediaMTX ──→ <span class="hl2">WebRTC :8889/rs_rgb</span>     ← 브라우저 최적!
+    /depth ──→ NUC MediaMTX ──→ <span class="hl2">WebRTC :8889/rs_depth</span>
+    /usb   ──→ NUC MediaMTX ──→ <span class="hl2">WebRTC :8889/cam_usb</span>
+
+<span class="hl">Pi5: 인코딩만 (CPU 가벼움) | NUC: 변환만 (CPU 여유)</span>
+</div>
+
+<!-- 4-1 MediaMTX 설치 -->
+<div class="step" id="nuc-mtx-install">
+<div class="step-h"><span class="step-num">9</span>MediaMTX 설치<span class="target target-nuc">🖥️ NUC</span></div>
+<div class="step-b">
+
+<pre class="cmd"><span class="cmt"># NUC는 x86_64(amd64) → amd64 버전 다운로드</span>
+cd ~
+wget https://github.com/bluenviron/mediamtx/releases/download/v1.16.1/mediamtx_v1.16.1_linux_amd64.tar.gz
+
+<span class="cmt"># 압축 해제</span>
+tar xzvf mediamtx_v1.16.1_linux_amd64.tar.gz
+
+<span class="cmt"># 실행 권한 확인</span>
+chmod +x ~/mediamtx
+./mediamtx --help | head -3</pre>
+
+<div class="tip tip-r"><span class="tip-i">🚨</span><div><strong>NUC = amd64, Pi5 = arm64</strong> — 아키텍처가 다릅니다!<br>
+NUC: <code>mediamtx_v1.16.1_linux_<span class="hl">amd64</span>.tar.gz</code><br>
+Pi5: <code>mediamtx_v1.16.1_linux_<span class="hl">arm64</span>.tar.gz</code></div></div>
+</div>
+</div>
+
+<!-- 4-2 프록시 설정 -->
+<div class="step" id="nuc-mtx-config">
+<div class="step-h"><span class="step-num">10</span>프록시 설정 파일 생성<span class="target target-nuc">🖥️ NUC</span></div>
+<div class="step-b">
+
+<pre class="cmd"><span class="cmt"># Pi5 RTSP를 프록시하는 설정 파일 생성</span>
+cat > ~/mediamtx_proxy.yml << 'EOF'
+# NUC MediaMTX 프록시 설정
+# Pi5 GStreamer RTSP → WebRTC/HLS 변환
+
+rtspAddress: :8564
+hlsAddress: :8888
+webrtcAddress: :8889
+
+paths:
+  rs_rgb:
+    source: rtsp://<span class="hl">10.10.1.10</span>:8554/rgb
+    sourceOnDemand: yes
+  rs_depth:
+    source: rtsp://<span class="hl">10.10.1.10</span>:8554/depth
+    sourceOnDemand: yes
+  cam_usb:
+    source: rtsp://<span class="hl">10.10.1.10</span>:8554/usb
+    sourceOnDemand: yes
+EOF</pre>
+
+<div class="tip tip-w"><span class="tip-i">⚠️</span><div><strong>IP를 본인 Pi5 IP로 변경</strong>하세요. 현재: 로봇망 <code>10.10.1.10</code>, 일반망 <code>192.168.50.110</code></div></div>
+
+<p style="margin:.5rem 0"><strong>설정 설명:</strong></p>
+<table class="tbl">
+<tr><th>항목</th><th>값</th><th>설명</th></tr>
+<tr><td><code>source</code></td><td><code>rtsp://Pi5:8554/...</code></td><td>Pi5 GStreamer RTSP 원본</td></tr>
+<tr><td><code>sourceOnDemand</code></td><td><code>yes</code></td><td>브라우저 접속 시에만 Pi5에 연결 (리소스 절약)</td></tr>
+<tr><td><code>:8564</code></td><td>RTSP</td><td>VLC 등 전용 플레이어용</td></tr>
+<tr><td><code>:8888</code></td><td>HLS</td><td>호환성 최대 (5~10초 지연)</td></tr>
+<tr><td><code>:8889</code></td><td><strong>WebRTC</strong></td><td>브라우저 최적 (지연 1초 미만)</td></tr>
+</table>
+</div>
+</div>
+
+<!-- 4-3 MediaMTX 실행 -->
+<div class="step" id="nuc-mtx-run">
+<div class="step-h"><span class="step-num">11</span>MediaMTX 실행<span class="target target-nuc">🖥️ NUC</span></div>
+<div class="step-b">
+
+<pre class="cmd"><span class="cmt"># MediaMTX 프록시 실행 (NUC 터미널 2)</span>
+~/mediamtx ~/mediamtx_proxy.yml</pre>
+
+<p style="margin:.5rem 0"><strong>브라우저에서 바로 확인:</strong></p>
+<table class="tbl">
+<tr><th>프로토콜</th><th>URL (NUC IP 기준)</th><th>특징</th></tr>
+<tr><td>🌐 <strong>WebRTC</strong></td><td><code>http://10.10.1.20:8889/rs_rgb</code></td><td><strong>지연 1초 미만 (권장!)</strong></td></tr>
+<tr><td>🌐 <strong>WebRTC</strong></td><td><code>http://10.10.1.20:8889/rs_depth</code></td><td>RealSense Depth 컬러맵</td></tr>
+<tr><td>🌐 <strong>WebRTC</strong></td><td><code>http://10.10.1.20:8889/cam_usb</code></td><td>USB 카메라</td></tr>
+<tr><td>📺 HLS</td><td><code>http://10.10.1.20:8888/rs_rgb/</code></td><td>호환성 최대</td></tr>
+</table>
+
+<div class="tip tip-g"><span class="tip-i">✅</span><div><strong>같은 WiFi의 모든 기기</strong>에서 접속 가능!<br>
+일반망 NUC IP가 <code>192.168.50.190</code>이면:<br>
+<code>http://192.168.50.190:8889/rs_rgb</code> 으로도 접속됩니다.</div></div>
+
+<p style="margin:.5rem 0"><strong>(선택) systemd 자동 시작:</strong></p>
+<pre class="cmd"><span class="cmt"># systemd 서비스 등록</span>
+sudo tee /etc/systemd/system/mediamtx.service &lt;&lt; 'EOF'
+[Unit]
+Description=MediaMTX Proxy (Pi5 RTSP → WebRTC/HLS)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=<span class="hl">bigman</span>
+ExecStart=/home/<span class="hl">bigman</span>/mediamtx /home/<span class="hl">bigman</span>/mediamtx_proxy.yml
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now mediamtx</pre>
+</div>
+</div>
+</div>
+
+<!-- ===== 5. NUC Phase 1 대시보드 ===== -->
+<div class="sec" id="nuc-phase1">
+<div class="sec-title">5. NUC — Phase 1 대시보드 & 테스트 콘솔</div>
+
+<div class="step" id="nuc-deploy">
+<div class="step-h"><span class="step-num">12</span>Phase 1 파일 배포 & 의존성 설치<span class="target target-nuc">🖥️ NUC</span></div>
+<div class="step-b">
+
+<pre class="cmd"><span class="cmt"># NUC에 폴더 생성 & 파일 전송 (로컬 PC에서 실행)</span>
+ssh <span class="hl">bigman</span>@10.10.1.20 "mkdir -p ~/phase1"
+
+<span class="cmt"># 파일 전송</span>
+scp ros2_robot_register.py <span class="hl">bigman</span>@10.10.1.20:~/phase1/
+scp phase1.html <span class="hl">bigman</span>@10.10.1.20:~/phase1/
+scp phase1-test.html <span class="hl">bigman</span>@10.10.1.20:~/phase1/
+scp requirements.txt <span class="hl">bigman</span>@10.10.1.20:~/phase1/</pre>
+
+<p style="margin:.75rem 0"><strong>NUC에서 의존성 설치:</strong></p>
+<pre class="cmd"><span class="cmt"># NUC에 SSH 접속</span>
+ssh <span class="hl">bigman</span>@10.10.1.20
+cd ~/phase1
+
+<span class="cmt"># ① Python 의존성 설치 (FastAPI, uvicorn, websockets)</span>
+pip3 install -r requirements.txt --break-system-packages
+
+<span class="cmt"># ② SQLite3 확인 (Ubuntu 24.04에 기본 포함, 확인만)</span>
+python3 -c "import sqlite3; print('SQLite3 OK:', sqlite3.sqlite_version)"
+<span class="cmt"># → SQLite3 OK: 3.45.x</span>
+
+<span class="cmt"># ③ websockets 설치 확인</span>
+python3 -c "import websockets; print('websockets OK')"
+<span class="cmt"># → websockets OK</span></pre>
+
+<div class="tip tip-b"><span class="tip-i">💡</span><div><strong>v4에서 추가된 의존성:</strong><br>
+<code>websockets</code> — rosbridge(ws://localhost:9090) 연결용. <code>pip install websockets</code><br>
+<code>sqlite3</code> — 로봇 등록 DB 영구 저장 (Python 기본 내장, 별도 설치 불필요)<br><br>
+SQLite DB 파일(<code>robots.db</code>)은 서버 첫 실행 시 <code>~/phase1/robots.db</code>에 자동 생성됩니다.<br>
+서버를 재시작해도 등록된 로봇이 유지됩니다!</div></div>
+
+<div class="tip tip-w"><span class="tip-i">⚠️</span><div><strong>requirements.txt 내용:</strong><br>
+<code>fastapi>=0.104.0</code>, <code>uvicorn>=0.24.0</code>, <code>pydantic>=2.0.0</code>, <code>websockets>=12.0</code></div></div>
+</div>
+</div>
+
+<div class="step" id="nuc-run">
+<div class="step-h"><span class="step-num">13</span>Phase 1 서버 실행<span class="target target-nuc">🖥️ NUC</span></div>
+<div class="step-b">
+
+<pre class="cmd"><span class="cmt"># Phase 1 서버 실행 (NUC 터미널 4)</span>
+cd ~/phase1
+python3 ros2_robot_register.py</pre>
+
+<p style="margin:.5rem 0">정상 실행 시:</p>
+<pre class="cmd"><span class="ok">🏭 Phase 1 — 로봇 등록 서버 v4</span>
+<span class="ok">📊 대시보드:   http://0.0.0.0:8080</span>
+<span class="ok">🧪 테스트:     http://0.0.0.0:8080/test</span>
+<span class="ok">🔌 rosbridge:  ws://localhost:9090</span>
+<span class="ok">💾 DB:         ~/phase1/robots.db</span></pre>
+
+<p style="margin:.5rem 0">접속 URL:</p>
+<table class="tbl">
+<tr><th>페이지</th><th>URL</th><th>설명</th></tr>
+<tr><td>📊 대시보드</td><td><code>http://10.10.1.20:8080</code></td><td>로봇 등록 + 상태 모니터링</td></tr>
+<tr><td>🧪 테스트 콘솔</td><td><code>http://10.10.1.20:8080/test</code></td><td>조이스틱 + 카메라 + 센서</td></tr>
+</table>
+
+<div class="tip tip-g"><span class="tip-i">✅</span><div><strong>서버가 rosbridge에 자동 연결합니다!</strong><br>
+④번 rosbridge가 실행 중이면, Phase 1 서버가 <code>ws://localhost:9090</code>에 자동으로 연결하고 Pi5 토픽을 구독합니다.<br>
+대시보드에서 로봇을 등록하면 rosbridge를 통해 <strong>실시간 센서 데이터</strong>가 표시됩니다.</div></div>
+</div>
+</div>
+</div>
+
+<!-- ===== 6. 전체 연결 & 검증 ===== -->
+<div class="sec" id="connect">
+<div class="sec-title">6. 전체 연결 & 검증</div>
+
+<div class="step">
+<div class="step-h"><span class="step-num">14</span>전체 실행 순서 & 체크리스트<span class="target target-both">📋 모두</span></div>
+<div class="step-b">
+
+<table class="tbl">
+<tr><th>순서</th><th>머신</th><th>명령어</th><th>포트</th></tr>
+<tr><td>①</td><td>🍓 Pi5</td><td><code>python3 ~/camera_server_v2.py</code></td><td>8554</td></tr>
+<tr><td>②</td><td>🍓 Pi5</td><td><code>python3 ~/lerobot_bridge.py</code></td><td>DDS</td></tr>
+<tr><td>③</td><td>🖥️ NUC</td><td><code>~/mediamtx ~/mediamtx_proxy.yml</code></td><td>8889/8888</td></tr>
+<tr><td>④</td><td>🖥️ NUC</td><td><code>ros2 launch rosbridge_server rosbridge_websocket_launch.xml</code></td><td>9090</td></tr>
+<tr><td>⑤</td><td>🖥️ NUC</td><td><code>cd ~/phase1 && python3 ros2_robot_register.py</code></td><td>8080</td></tr>
+</table>
+
+<p style="margin:.75rem 0"><strong>체크리스트:</strong></p>
+<div class="chk">Pi5 RTSP 확인: <code>ffplay rtsp://10.10.1.10:8554/rgb</code></div>
+<div class="chk">WebRTC 확인: 브라우저에서 <code>http://10.10.1.20:8889/rs_rgb</code></div>
+<div class="chk">USB WebRTC: <code>http://10.10.1.20:8889/cam_usb</code></div>
+<div class="chk">대시보드: <code>http://10.10.1.20:8080</code></div>
+<div class="chk">테스트 콘솔: <code>http://10.10.1.20:8080/test</code></div>
+<div class="chk">ROS2 토픽: <code>ros2 topic list</code>에서 Pi5 토픽 확인</div>
+</div>
+</div>
+</div>
+
+<!-- ===== 7. 트러블슈팅 ===== -->
+<div class="sec" id="trouble">
+<div class="sec-title">7. 트러블슈팅</div>
+
+<table class="tbl">
+<tr><th>증상</th><th>원인</th><th>해결</th></tr>
+<tr><td>WebRTC "no stream"</td><td>Pi5 카메라 서버 미실행</td><td>Pi5에서 <code>python3 camera_server_v2.py</code> 확인</td></tr>
+<tr><td>WebRTC 검은 화면</td><td>카메라 연결 문제</td><td>Pi5: <code>v4l2-ctl --list-devices</code></td></tr>
+<tr><td>NUC RTSP 연결 안 됨</td><td>Pi5 방화벽</td><td><code>sudo ufw allow 8554</code></td></tr>
+<tr><td>대시보드 "OFFLINE"</td><td>서버 미실행</td><td><code>python3 ros2_robot_register.py</code></td></tr>
+<tr><td>센서값 "--"</td><td>rosbridge 미연결</td><td>NUC에서 <code>ros2 launch rosbridge_server rosbridge_websocket_launch.xml</code></td></tr>
+<tr><td>상태바 ROSBRIDGE 빨간불</td><td>rosbridge 미실행</td><td>④번 rosbridge 먼저 실행 후 ⑤번 서버 실행</td></tr>
+<tr><td>조이스틱 조작 안 됨</td><td>rosbridge 미연결 또는 로봇 미선택</td><td>rosbridge 확인 + 테스트 페이지에서 로봇 칩 클릭</td></tr>
+<tr><td>로봇 등록 후 사라짐</td><td>구버전 서버 (v3 메모리 저장)</td><td>v4 업데이트 — SQLite DB 자동 영구 저장</td></tr>
+<tr><td>ROS2 토픽 안 보임</td><td>FastDDS 화이트리스트 문제</td><td>Pi5·NUC 양쪽 10.10.1.x 설정 확인</td></tr>
+<tr><td>websockets import 에러</td><td>미설치</td><td><code>pip3 install websockets --break-system-packages</code></td></tr>
+</table>
